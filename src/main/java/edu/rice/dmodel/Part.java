@@ -7,6 +7,8 @@ import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
 
+import scala.Serializable;
+
 //CREATE TABLE PART  ( P_PARTKEY     INTEGER NOT NULL,
 //        P_NAME        VARCHAR(55) NOT NULL,
 //        P_MFGR        CHAR(25) NOT NULL,
@@ -17,7 +19,12 @@ import org.apache.log4j.Logger;
 //        P_RETAILPRICE DECIMAL(15,2) NOT NULL,
 //        P_COMMENT     VARCHAR(23) NOT NULL );
 
-public class Part {
+public class Part implements Serializable  {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8233453288152642686L;
+
 	static Logger logger = Logger.getLogger(Part.class);
 
 	private int partID;

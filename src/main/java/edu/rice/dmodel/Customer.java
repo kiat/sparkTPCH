@@ -2,7 +2,14 @@ package edu.rice.dmodel;
 
 import java.util.List;
 
-public class Customer {
+import scala.Serializable;
+
+public class Customer implements Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -5361303693082699460L;
 
 	public Customer(List<Order> orders, int custkey, String name, String address, int nationkey, String phone, double accbal, String mktsegment, String comment) {
 		super();

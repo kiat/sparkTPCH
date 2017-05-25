@@ -2,7 +2,14 @@ package edu.rice.dmodel;
 
 import org.apache.log4j.Logger;
 
-public class LineItem {
+import scala.Serializable;
+
+public class LineItem implements Serializable  {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -9109735608034808529L;
 
 	static Logger logger = Logger.getLogger(LineItem.class);
 

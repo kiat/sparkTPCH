@@ -1,8 +1,14 @@
 package edu.rice.dmodel;
 
+import scala.Serializable;
 
-public class Supplier {
 
+public class Supplier  implements Serializable  {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -492779361042916008L;
 	/**
 	 * This class represents a supplier as it is specified in TPC-H benchmark
 	 * schema

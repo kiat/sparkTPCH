@@ -2,7 +2,9 @@ package edu.rice.dmodel;
 
 import java.util.List;
 
-public class Order {
+import scala.Serializable;
+
+public class Order implements Serializable  {
 
 	// CREATE TABLE ORDERS ( O_ORDERKEY INTEGER NOT NULL,
 	// O_CUSTKEY INTEGER NOT NULL,
@@ -16,6 +18,11 @@ public class Order {
 
 	// private int orderkey;
 	// private int custkey;
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 4658902771232417539L;
 
 	private List<LineItem> lineItems;
 
