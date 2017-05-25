@@ -6,8 +6,12 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.log4j.PropertyConfigurator;
+import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
 
 import edu.rice.dmodel.Customer;
 import edu.rice.dmodel.LineItem;
@@ -31,14 +35,25 @@ public class GenerateData {
 
 	
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-
+				
+		
 		PropertyConfigurator.configure("log4j.properties");
 
-		String PartFile = "tables_scale_" + args[1] + "/part.tbl";
-		String SupplierFile = "tables_scale_" + args[1] + "/supplier.tbl";
-		String OrderFile = "tables_scale_" + args[1] + "/orders.tbl";
-		String LineitemFile = "tables_scale_" + args[1] + "/lineitem.tbl";
-		String CustomerFile = "tables_scale_" + args[1] + "/customer.tbl";
+		// run on local machine with 8 CPU cores and 8GB spark memory
+		SparkConf sparkConf = new SparkConf().setAppName("ComplexObjectManipulation").setMaster("local[8]").set("spark.executor.memory", "8g");
+
+		JavaSparkContext sc = new JavaSparkContext(sparkConf);
+		
+		
+		
+		
+		String filename= "0.1";
+		
+		String PartFile = "tables_scale_" + filename + "/part.tbl";
+		String SupplierFile = "tables_scale_" + filename + "/supplier.tbl";
+		String OrderFile = "tables_scale_" + filename + "/orders.tbl";
+		String LineitemFile = "tables_scale_" + filename + "/lineitem.tbl";
+		String CustomerFile = "tables_scale_" + filename + "/customer.tbl";
 
 		HashMap<Integer, Part> partMap = new HashMap<Integer, Part>(6000000);
 		HashMap<Integer, Supplier> supplierMap = new HashMap<Integer, Supplier>(100000);
@@ -278,6 +293,10 @@ public class GenerateData {
 
 		System.out.println("Start reading Customers ...");
 
+		List<Customer> employeeList=new ArrayList<Customer>(1200000);
+
+		
+		
 		BufferedReader brCustomers = new BufferedReader(new FileReader(CustomerFile));
 		String lineCustomer;
 
@@ -294,13 +313,26 @@ public class GenerateData {
 
 			Customer myCustomer = new Customer(values, customerKey, customerData[1], customerData[2], Integer.parseInt(customerData[3]), customerData[4],
 					Double.parseDouble(customerData[5]), customerData[6], customerData[7]);
-
-
-			System.out.println(myCustomer);
-
+			
+			employeeList.add(myCustomer);
 		}
 		
 		brCustomers.close();
+		
+		
+		JavaRDD<Customer> employeeRDD=	sc.parallelize(employeeList);
+		
+		List<Customer> output = employeeRDD.collect(); 
+
+		
+		for (Customer customer : output) {
+			
+			System.out.println(customer.getName());
+			
+		}
+		
+		
+		
 
 	}
 }
