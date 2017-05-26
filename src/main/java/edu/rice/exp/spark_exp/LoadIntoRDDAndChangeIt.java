@@ -13,7 +13,7 @@ import edu.rice.generate_data.DataGenerator;
 
 public class LoadIntoRDDAndChangeIt {
 	
-	public static int NUMBER_OF_COPIES = 6;
+	public static int NUMBER_OF_COPIES = 2;
 	
 	private static JavaSparkContext sc;
 
@@ -30,6 +30,7 @@ public class LoadIntoRDDAndChangeIt {
 		
 		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData());
 
+		// Copy the same data multiple times to make it big data 
 		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
 			customerRDD = customerRDD.union(customerRDD);
 			System.out.println("Added " + (i+1) * 15000 + " Customers.");
@@ -38,9 +39,7 @@ public class LoadIntoRDDAndChangeIt {
 		// enforce spark to do the job and load data into RDD 
 		System.out.println(customerRDD.count());
 
-		// Data is generated and is loaded in RDD
-
-		
+		// Now is data loaded in RDD, ready for the experiment
 		// Start the timer
 		startTime = System.nanoTime();
 		
@@ -51,6 +50,7 @@ public class LoadIntoRDDAndChangeIt {
 		// to enforce spark to do the job
      	System.out.println(new_customerRDD.count());
 
+		// Stop the timer
 		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
 		
 		System.out.println(String.format("%.9f", elapsedTotalTime));
