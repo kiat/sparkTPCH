@@ -8,11 +8,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.log4j.PropertyConfigurator;
-import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
-
 import edu.rice.dmodel.Customer;
 import edu.rice.dmodel.LineItem;
 import edu.rice.dmodel.Order;
@@ -30,63 +25,18 @@ import edu.rice.dmodel.Supplier;
  */
 public class DataGenerator {
 
-	public static int NUMBER_OF_COPIES = 6;
 
-	public static List<Customer> tmpList = new ArrayList<Customer>(1000);
 
-	private static JavaSparkContext sc;
-
-	public static void main(String[] args) throws FileNotFoundException, IOException {
-		long startTime = 0;
-		double elapsedTotalTime = 0;
-		
-		PropertyConfigurator.configure("log4j.properties");
-
-		// run on local machine with 8 CPU cores and 8GB spark memory
-		SparkConf sparkConf = new SparkConf().setAppName("ComplexObjectManipulation").setMaster("local[8]").set("spark.executor.memory", "8g");
-		sc = new JavaSparkContext(sparkConf);
-		
-		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData());
-
-		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
-			customerRDD = customerRDD.union(customerRDD);
-			System.out.println("Added " + (i+1) * 15000 + " Customers.");
-		}
-
-		// enforce spark to do the job and load data into RDD 
-		System.out.println(customerRDD.count());
-
-		// Data is generated and is loaded in RDD
-
-		
-		// Start the timer
-		startTime = System.nanoTime();
-		
-		
-		// modify each customers, go deep into orders -> lineitems -> parts
-		JavaRDD<Customer> new_customerRDD = customerRDD.map(customer -> DataGenerator.changeIt(customer));
-
-		// to enforce spark to do the job
-     	System.out.println(new_customerRDD.count());
-
-		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
-		
-		System.out.println(String.format("%.9f", elapsedTotalTime));
-
-     	
-		
-	}
-
-	private static void print_a_SinglePart(List<Customer> output) {
-		for (Customer customer : output) {
-			List<Order> orders = customer.getOrders();
-			if (orders.size() > 0) {
-				List<LineItem> lineitems = orders.get(0).getLineItems();
-				if (lineitems.size() > 0)
-					System.out.println(customer.getOrders().get(0).getLineItems().get(0).getPart().getPartID());
-			}
-		}
-	}
+//	private static void print_a_SinglePart(List<Customer> output) {
+//		for (Customer customer : output) {
+//			List<Order> orders = customer.getOrders();
+//			if (orders.size() > 0) {
+//				List<LineItem> lineitems = orders.get(0).getLineItems();
+//				if (lineitems.size() > 0)
+//					System.out.println(customer.getOrders().get(0).getLineItems().get(0).getPart().getPartID());
+//			}
+//		}
+//	}
 
 	public static Customer changeIt(Customer cust) {
 		List<Order> orders = cust.getOrders();
@@ -114,9 +64,8 @@ public class DataGenerator {
 
 	public static List<Customer> generateData() throws FileNotFoundException, IOException {
 
-
 		String filename = "0.1";
-
+		
 		String PartFile = "tables_scale_" + filename + "/part.tbl";
 		String SupplierFile = "tables_scale_" + filename + "/supplier.tbl";
 		String OrderFile = "tables_scale_" + filename + "/orders.tbl";
@@ -356,7 +305,7 @@ public class DataGenerator {
 
 		System.out.println("Start reading Customers ...");
 
-		List<Customer> customerList = new ArrayList<Customer>(1200000);
+		List<Customer> customerList = new ArrayList<Customer>(150000);
 
 		BufferedReader brCustomers = new BufferedReader(new FileReader(CustomerFile));
 		String lineCustomer;
