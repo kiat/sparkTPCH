@@ -31,30 +31,36 @@ import edu.rice.dmodel.Supplier;
  *         x20 i.e., 600000 x 20 = 12000000 LineItems Customers x80 i.e.,
  *         15000 x 80 = 1200000 Customers
  */
-public class GenerateData {
+public class DataGenerator {
+	
+	public static int NUMBER_OF_COPIES=1;
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
 		PropertyConfigurator.configure("log4j.properties");
 
-		JavaRDD<Customer> employeeRDD = new GenerateData().generateData();
+		JavaRDD<Customer> employeeRDD = DataGenerator.generateData();
 
-		for (int i = 0; i < 20; i++) {
+		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
 			employeeRDD = employeeRDD.union(employeeRDD);
-			System.out.println("Added " + i*15000 + " Customers Data.");
+			System.out.println("Added " + i + " Customers Data.");
 			
 		}
 		
 		
 		
 		
-		
-		System.out.println("RDD loaded into memory");
-		
-		System.out.println("Now Collect");
-		List<Customer> output = employeeRDD.collect();
-
-		System.out.println(output.size());
+//		
+//		
+//		
+//		
+//		
+//		System.out.println("RDD loaded into memory");
+//		
+//		System.out.println("Now Collect");
+//		List<Customer> output = employeeRDD.collect();
+//
+//		System.out.println(output.size());
 
 		// for (Customer customer : output) {
 		//
@@ -64,7 +70,7 @@ public class GenerateData {
 
 	}
 
-	public JavaRDD<Customer> generateData() throws FileNotFoundException, IOException {
+	public static JavaRDD<Customer> generateData() throws FileNotFoundException, IOException {
 
 		// run on local machine with 8 CPU cores and 8GB spark memory
 		SparkConf sparkConf = new SparkConf().setAppName("ComplexObjectManipulation").setMaster("local[8]").set("spark.executor.memory", "8g");
