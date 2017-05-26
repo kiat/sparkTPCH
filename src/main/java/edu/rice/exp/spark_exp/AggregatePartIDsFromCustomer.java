@@ -2,16 +2,23 @@ package edu.rice.exp.spark_exp;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.api.java.function.PairFunction;
 
+import scala.Tuple2;
 import edu.rice.dmodel.Customer;
 import edu.rice.generate_data.DataGenerator;
 
-public class LoadIntoRDDAndChangeIt {
+public class AggregatePartIDsFromCustomer {
 	
 	
 	private static JavaSparkContext sc;
@@ -49,13 +56,24 @@ public class LoadIntoRDDAndChangeIt {
 		// Now is data loaded in RDD, ready for the experiment
 		// Start the timer
 		startTime = System.nanoTime();
-		
-		
-		// modify each customers, go deep into orders -> lineitems -> parts
-		JavaRDD<Customer> new_customerRDD = customerRDD.map(customer -> DataGenerator.changeIt(customer));
 
-		// to enforce spark to do the job
-     	System.out.println(new_customerRDD.count());
+		
+		JavaRDD<Tuple2<String, List<Integer>>> wordCounts ; 
+		
+		
+//		JavaRDD<Tuple2<String, String, List<Integer>>> wordCounts = customerRDD.flatMap(new FlatMapFunction<Customer,Tuple2<String, String, List<Integer>>>() {
+//		
+//		});
+		
+		
+		
+		
+//		
+//		// modify each customers, go deep into orders -> lineitems -> parts
+//		JavaRDD<Customer> new_customerRDD = customerRDD.map(customer -> DataGenerator.changeIt(customer));
+//
+//		// to enforce spark to do the job
+//     	System.out.println(new_customerRDD.count());
 
 		// Stop the timer
 		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
