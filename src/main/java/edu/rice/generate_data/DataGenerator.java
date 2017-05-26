@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
 import edu.rice.dmodel.Customer;
@@ -40,14 +41,21 @@ public class DataGenerator {
 
 	public static Customer changeIt(Customer cust) {
 		List<Order> orders = cust.getOrders();
-		orders.parallelStream().forEach(order -> changeIt(order));
-		cust.setOrders(orders);
+		List<Order> orders_new =new ArrayList<>(orders.size());
+		for (Order order : orders) {
+			orders_new.add(changeIt(order));
+		}
+		cust.setOrders(orders_new);
 		return cust;
 	}
 
 	public static Order changeIt(Order order) {
 		List<LineItem> lineitems = order.getLineItems();
-		lineitems.parallelStream().forEach(lineitem -> changeIt(lineitem));
+//		lineitems.parallelStream().forEach(lineitem -> changeIt(lineitem));
+		for (LineItem lineItem : lineitems) {
+			changeIt(lineItem); 
+		}
+		
 		order.setLineItems(lineitems);
 		return order;
 	}
