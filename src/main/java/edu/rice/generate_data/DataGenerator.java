@@ -67,7 +67,7 @@ public class DataGenerator {
 		
 		
 		System.out.println("Now Collect");
-		List<Customer> output = new_customerRDD.collect();
+		List<Customer> output = new_customerRDD.take(10);
 
 		System.out.println(output.size());
 
