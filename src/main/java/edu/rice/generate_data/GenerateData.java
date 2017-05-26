@@ -19,36 +19,60 @@ import edu.rice.dmodel.Order;
 import edu.rice.dmodel.Part;
 import edu.rice.dmodel.Supplier;
 
-
-
 /**
  * 
  * @author Kia
- * This class reads the TPC-H table files and generate data in various serializations together with their index files. 
- * Scale 0.1 of TPC-H dbgen generates 20000 Parts, 600000 LineItem and 15000 Customers. 
- * We store multiply each of these data sets with different factors. 
- * Parts x100 i.e., 20000x 100 = 2000000 Parts that we store in file 
- * LineItems x20 i.e., 600000 x 20 = 12000000 LineItems
- * Customers x80 i.e., 15000x80  = 1200000  Customers
+ * 
+ *         This class reads the TPC-H table files and generate data in various
+ *         serializations together with their index files. Scale 0.1 of TPC-H
+ *         dbgen generates 20000 Parts, 600000 LineItem and 15000 Customers. We
+ *         store multiply each of these data sets with different factors. 
+ *         Parts * x100 i.e., 20000x 100 = 2000000 Parts that we store in file LineItems
+ *         x20 i.e., 600000 x 20 = 12000000 LineItems Customers x80 i.e.,
+ *         15000 x 80 = 1200000 Customers
  */
 public class GenerateData {
 
-	
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-				
-		
+
 		PropertyConfigurator.configure("log4j.properties");
+
+		JavaRDD<Customer> employeeRDD = new GenerateData().generateData();
+
+		for (int i = 0; i < 20; i++) {
+			employeeRDD = employeeRDD.union(employeeRDD);
+			System.out.println("Added " + i*15000 + " Customers Data.");
+			
+		}
+		
+		
+		
+		
+		
+		System.out.println("RDD loaded into memory");
+		
+		System.out.println("Now Collect");
+		List<Customer> output = employeeRDD.collect();
+
+		System.out.println(output.size());
+
+		// for (Customer customer : output) {
+		//
+		// System.out.println(customer.getName());
+		//
+		// }
+
+	}
+
+	public JavaRDD<Customer> generateData() throws FileNotFoundException, IOException {
 
 		// run on local machine with 8 CPU cores and 8GB spark memory
 		SparkConf sparkConf = new SparkConf().setAppName("ComplexObjectManipulation").setMaster("local[8]").set("spark.executor.memory", "8g");
 
 		JavaSparkContext sc = new JavaSparkContext(sparkConf);
-		
-		
-		
-		
-		String filename= "0.1";
-		
+
+		String filename = "0.1";
+
 		String PartFile = "tables_scale_" + filename + "/part.tbl";
 		String SupplierFile = "tables_scale_" + filename + "/supplier.tbl";
 		String OrderFile = "tables_scale_" + filename + "/orders.tbl";
@@ -81,8 +105,6 @@ public class GenerateData {
 		// P_COMMENT VARCHAR(23) NOT NULL );
 		System.out.println("Reading Parts ...");
 
-
-
 		try (BufferedReader br = new BufferedReader(new FileReader(PartFile))) {
 			String line;
 			while ((line = br.readLine()) != null) {
@@ -98,7 +120,6 @@ public class GenerateData {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
 
 		// ####################################
 		// ####################################
@@ -211,9 +232,6 @@ public class GenerateData {
 		// LineItems loaded to memory
 		System.out.println("LineItems loaded to memory");
 
-
-
-
 		// ####################################
 		// ####################################
 		// ########## #########
@@ -269,7 +287,6 @@ public class GenerateData {
 
 		brLineItems.close();
 		brOrders.close();
-		
 
 		// ####################################
 		// ####################################
@@ -293,10 +310,8 @@ public class GenerateData {
 
 		System.out.println("Start reading Customers ...");
 
-		List<Customer> employeeList=new ArrayList<Customer>(1200000);
+		List<Customer> employeeList = new ArrayList<Customer>(1200000);
 
-		
-		
 		BufferedReader brCustomers = new BufferedReader(new FileReader(CustomerFile));
 		String lineCustomer;
 
@@ -307,32 +322,23 @@ public class GenerateData {
 
 			ArrayList<Order> values = new ArrayList<Order>();
 			if (orderMap.containsKey(customerKey)) {
-				// if the orderMap contains an other with this id add it to the  List
+				// if the orderMap contains an other with this id add it to the
+				// List
 				values = orderMap.get(customerKey);
 			}
 
 			Customer myCustomer = new Customer(values, customerKey, customerData[1], customerData[2], Integer.parseInt(customerData[3]), customerData[4],
 					Double.parseDouble(customerData[5]), customerData[6], customerData[7]);
-			
+
 			employeeList.add(myCustomer);
 		}
-		
-		brCustomers.close();
-		
-		
-		JavaRDD<Customer> employeeRDD=	sc.parallelize(employeeList);
-		
-		List<Customer> output = employeeRDD.collect(); 
 
-		
-		for (Customer customer : output) {
-			
-			System.out.println(customer.getName());
-			
-		}
-		
-		
-		
+		brCustomers.close();
+
+		JavaRDD<Customer> employeeRDD = sc.parallelize(employeeList);
+
+		return employeeRDD;
 
 	}
+
 }
