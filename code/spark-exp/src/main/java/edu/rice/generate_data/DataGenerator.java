@@ -12,6 +12,7 @@ import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.VoidFunction;
 
 import edu.rice.dmodel.Customer;
 import edu.rice.dmodel.LineItem;
@@ -34,33 +35,41 @@ import edu.rice.dmodel.Supplier;
 public class DataGenerator {
 	
 	public static int NUMBER_OF_COPIES=1;
+	
+	
+	public static List<Customer> tmpList = new ArrayList<Customer>(1000);
+	 
+
+	
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
 		PropertyConfigurator.configure("log4j.properties");
 
-		JavaRDD<Customer> employeeRDD = DataGenerator.generateData();
+		JavaRDD<Customer> customerRDD = DataGenerator.generateData();
 
 		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
-			employeeRDD = employeeRDD.union(employeeRDD);
+			customerRDD = customerRDD.union(customerRDD);
 			System.out.println("Added " + i + " Customers Data.");
 			
 		}
 		
 		
+		// Data is generated and is loaded in RDD 
+		
+
+		JavaRDD<Customer> new_customerRDD = customerRDD.map(customer -> DataGenerator.changeIt(customer)); 
 		
 		
-//		
-//		
-//		
-//		
-//		
-//		System.out.println("RDD loaded into memory");
-//		
-//		System.out.println("Now Collect");
-//		List<Customer> output = employeeRDD.collect();
-//
-//		System.out.println(output.size());
+		
+		
+		
+		
+		
+		System.out.println("Now Collect");
+		List<Customer> output = new_customerRDD.collect();
+
+		System.out.println(output.size());
 
 		// for (Customer customer : output) {
 		//
@@ -69,6 +78,18 @@ public class DataGenerator {
 		// }
 
 	}
+	
+	public static Customer changeIt(Customer cust){
+		
+		
+		
+		
+		
+		return null; 
+	}
+	
+	
+	
 
 	public static JavaRDD<Customer> generateData() throws FileNotFoundException, IOException {
 
