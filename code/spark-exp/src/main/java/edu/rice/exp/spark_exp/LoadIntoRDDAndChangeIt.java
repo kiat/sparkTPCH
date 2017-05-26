@@ -13,7 +13,6 @@ import edu.rice.generate_data.DataGenerator;
 
 public class LoadIntoRDDAndChangeIt {
 	
-	public static int NUMBER_OF_COPIES = 2;
 	
 	private static JavaSparkContext sc;
 
@@ -21,20 +20,29 @@ public class LoadIntoRDDAndChangeIt {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		long startTime = 0;
 		double elapsedTotalTime = 0;
+		int NUMBER_OF_COPIES =2;
 		
+		if(args.length>0)
+		NUMBER_OF_COPIES = Integer.parseInt(args[0]);
+
 		PropertyConfigurator.configure("log4j.properties");
 
 		// run on local machine with 8 CPU cores and 8GB spark memory
-		SparkConf sparkConf = new SparkConf().setAppName("ComplexObjectManipulation").setMaster("local[8]").set("spark.executor.memory", "8g");
+		SparkConf sparkConf = new SparkConf().setAppName("ComplexObjectManipulation").setMaster("local[8]").set("spark.executor.memory", "32g");
+//		SparkConf sparkConf = new SparkConf();
+
 		sc = new JavaSparkContext(sparkConf);
 		
 		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData());
+		
+		customerRDD.cache();
 
 		// Copy the same data multiple times to make it big data 
 		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
 			customerRDD = customerRDD.union(customerRDD);
 			System.out.println("Added " + (i+1) * 15000 + " Customers.");
 		}
+		customerRDD.cache();
 
 		// enforce spark to do the job and load data into RDD 
 		System.out.println(customerRDD.count());
