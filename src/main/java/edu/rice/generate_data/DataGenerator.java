@@ -24,23 +24,16 @@ import edu.rice.dmodel.Supplier;
  * 
  * @author Kia
  * 
- *         This class reads the TPC-H table files and generate data in various
- *         serializations together with their index files. Scale 0.1 of TPC-H
- *         dbgen generates 20000 Parts, 600000 LineItem and 15000 Customers. We
- *         store multiply each of these data sets with different factors. 
- *         Parts * x100 i.e., 20000x 100 = 2000000 Parts that we store in file LineItems
- *         x20 i.e., 600000 x 20 = 12000000 LineItems Customers x80 i.e.,
- *         15000 x 80 = 1200000 Customers
+ *         This class reads the TPC-H table files and generate data in various serializations together with their index files. Scale 0.1 of TPC-H dbgen
+ *         generates 20000 Parts, 600000 LineItem and 15000 Customers. We store multiply each of these data sets with different factors. Parts * x100 i.e.,
+ *         20000x 100 = 2000000 Parts that we store in file LineItems x20 i.e., 600000 x 20 = 12000000 LineItems Customers x80 i.e., 15000 x 80 = 1200000
+ *         Customers
  */
 public class DataGenerator {
-	
-	public static int NUMBER_OF_COPIES=1;
-	
-	
-	public static List<Customer> tmpList = new ArrayList<Customer>(1000);
-	 
 
-	
+	public static int NUMBER_OF_COPIES = 1;
+
+	public static List<Customer> tmpList = new ArrayList<Customer>(1000);
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
@@ -51,45 +44,63 @@ public class DataGenerator {
 		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
 			customerRDD = customerRDD.union(customerRDD);
 			System.out.println("Added " + i + " Customers Data.");
-			
+
 		}
+
+		// Data is generated and is loaded in RDD
+
+		// Start the timer
 		
 		
-		// Data is generated and is loaded in RDD 
+		// modify each customers, go deep into orders -> lineitems -> parts
+		JavaRDD<Customer> new_customerRDD = customerRDD.map(customer -> DataGenerator.changeIt(customer));
+
 		
 
-		JavaRDD<Customer> new_customerRDD = customerRDD.map(customer -> DataGenerator.changeIt(customer)); 
 		
-		
-		
-		
-		
-		
-		
-		System.out.println("Now Collect");
-		List<Customer> output = new_customerRDD.take(10);
-
-		System.out.println(output.size());
-
-		// for (Customer customer : output) {
-		//
-		// System.out.println(customer.getName());
-		//
-		// }
+//		System.out.println("Now Collect");
+//		List<Customer> output = new_customerRDD.collect();
+//
+//		System.out.println(output.size());
+//
+//		print_a_SinglePart(output);
 
 	}
-	
-	public static Customer changeIt(Customer cust){
-		
-		
-		
-		
-		
-		return null; 
+
+	private static void print_a_SinglePart(List<Customer> output) {
+		for (Customer customer : output) {
+			List<Order> orders = customer.getOrders();
+			if (orders.size() > 0) {
+				List<LineItem> lineitems = orders.get(0).getLineItems();
+				if (lineitems.size() > 0)
+					System.out.println(customer.getOrders().get(0).getLineItems().get(0).getPart().getPartID());
+			}
+		}
 	}
-	
-	
-	
+
+	public static Customer changeIt(Customer cust) {
+		List<Order> orders = cust.getOrders();
+		orders.parallelStream().forEach(order -> changeIt(order));
+		cust.setOrders(orders);
+		return cust;
+	}
+
+	public static Order changeIt(Order order) {
+		List<LineItem> lineitems = order.getLineItems();
+		lineitems.parallelStream().forEach(lineitem -> changeIt(lineitem));
+		order.setLineItems(lineitems);
+		return order;
+	}
+
+	public static LineItem changeIt(LineItem lineitem) {
+		lineitem.setPart(changeIt(lineitem.getPart()));
+		return lineitem;
+	}
+
+	public static Part changeIt(Part part) {
+		part.setPartID(1);
+		return part;
+	}
 
 	public static JavaRDD<Customer> generateData() throws FileNotFoundException, IOException {
 
@@ -136,7 +147,8 @@ public class DataGenerator {
 			String line;
 			while ((line = br.readLine()) != null) {
 				String[] data = line.split("\\|");
-				Part myPart = new Part(Integer.parseInt(data[0]), data[1], data[2], data[3], data[4], Integer.parseInt(data[5]), data[6], Double.parseDouble(data[7]), data[8]);
+				Part myPart = new Part(Integer.parseInt(data[0]), data[1], data[2], data[3], data[4], Integer.parseInt(data[5]), data[6],
+						Double.parseDouble(data[7]), data[8]);
 
 				// index based on counter
 				partMap.put(Integer.parseInt(data[0]), myPart);
@@ -174,7 +186,8 @@ public class DataGenerator {
 			String line;
 			while ((line = br.readLine()) != null) {
 				String[] data = line.split("\\|");
-				Supplier mySupplier = new Supplier(Integer.parseInt(data[0]), data[1], data[2], Integer.parseInt(data[3]), data[4], Double.parseDouble(data[5]), data[6]);
+				Supplier mySupplier = new Supplier(Integer.parseInt(data[0]), data[1], data[2], Integer.parseInt(data[3]), data[4],
+						Double.parseDouble(data[5]), data[6]);
 				supplierMap.put(Integer.parseInt(data[0]), mySupplier);
 			}
 		} catch (FileNotFoundException e) {
@@ -237,8 +250,8 @@ public class DataGenerator {
 				System.err.println("There is no such Supplier");
 
 			LineItem tmpLineItem = new LineItem(orderKey, supplierTmp, partTmp, Integer.parseInt(lineItemData[3]), Double.parseDouble(lineItemData[4]),
-					Double.parseDouble(lineItemData[5]), Double.parseDouble(lineItemData[6]), Double.parseDouble(lineItemData[7]), lineItemData[8], lineItemData[9],
-					lineItemData[10], lineItemData[11], lineItemData[12], lineItemData[13], lineItemData[14], lineItemData[15]);
+					Double.parseDouble(lineItemData[5]), Double.parseDouble(lineItemData[6]), Double.parseDouble(lineItemData[7]), lineItemData[8],
+					lineItemData[9], lineItemData[10], lineItemData[11], lineItemData[12], lineItemData[13], lineItemData[14], lineItemData[15]);
 
 			if (lineItemMap.containsKey(orderKey)) {
 				ArrayList<LineItem> values = lineItemMap.get(orderKey);
@@ -290,8 +303,8 @@ public class DataGenerator {
 			int orderKey = Integer.parseInt(orderData[0]);
 			int customerKey = Integer.parseInt(orderData[1]);
 
-			Order myOrder = new Order(lineItemMap.get(orderKey), orderKey, Integer.parseInt(orderData[1]), orderData[2], Double.parseDouble(orderData[3]), orderData[4],
-					orderData[5], orderData[6], Integer.parseInt(orderData[7]), orderData[8]);
+			Order myOrder = new Order(lineItemMap.get(orderKey), orderKey, Integer.parseInt(orderData[1]), orderData[2], Double.parseDouble(orderData[3]),
+					orderData[4], orderData[5], orderData[6], Integer.parseInt(orderData[7]), orderData[8]);
 
 			if (orderMap.containsKey(customerKey)) {
 				ArrayList<Order> values = orderMap.get(customerKey);
@@ -337,7 +350,7 @@ public class DataGenerator {
 
 		System.out.println("Start reading Customers ...");
 
-		List<Customer> employeeList = new ArrayList<Customer>(1200000);
+		List<Customer> customerList = new ArrayList<Customer>(1200000);
 
 		BufferedReader brCustomers = new BufferedReader(new FileReader(CustomerFile));
 		String lineCustomer;
@@ -348,23 +361,23 @@ public class DataGenerator {
 			int customerKey = Integer.parseInt(customerData[0]);
 
 			ArrayList<Order> values = new ArrayList<Order>();
+
 			if (orderMap.containsKey(customerKey)) {
-				// if the orderMap contains an other with this id add it to the
-				// List
+				// if the orderMap contains another with this id add it to the List
 				values = orderMap.get(customerKey);
 			}
 
 			Customer myCustomer = new Customer(values, customerKey, customerData[1], customerData[2], Integer.parseInt(customerData[3]), customerData[4],
 					Double.parseDouble(customerData[5]), customerData[6], customerData[7]);
 
-			employeeList.add(myCustomer);
+			customerList.add(myCustomer);
 		}
 
 		brCustomers.close();
 
-		JavaRDD<Customer> employeeRDD = sc.parallelize(employeeList);
+		JavaRDD<Customer> customerRDD = sc.parallelize(customerList);
 
-		return employeeRDD;
+		return customerRDD;
 
 	}
 
