@@ -2,6 +2,7 @@ package edu.rice.exp.spark_exp;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.log4j.PropertyConfigurator;
@@ -16,6 +17,9 @@ import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 import edu.rice.dmodel.Customer;
+import edu.rice.dmodel.LineItem;
+import edu.rice.dmodel.Order;
+import edu.rice.dmodel.Part;
 import edu.rice.generate_data.DataGenerator;
 
 public class AggregatePartIDsFromCustomer {
@@ -58,12 +62,23 @@ public class AggregatePartIDsFromCustomer {
 		startTime = System.nanoTime();
 
 		
-		JavaRDD<Tuple2<String, List<Integer>>> wordCounts ; 
+		
+		JavaRDD< Tuple2<String,  List<Order>>> soldPartIDs1;
+		JavaRDD< Tuple2<String,  List<LineItem>>> soldPartIDs2;
+		JavaRDD< Tuple2<String,  Tuple2<String, List<Part>> > > soldPartIDs3;
+		
+		JavaRDD<Tuple2<String, List<Integer>>> soldPartIDs=customerRDD.flatMap(new FlatMapFunction<Customer, Tuple2<String, List<Integer>>>() {
+			@Override
+			public Iterator<Tuple2<String, List<Integer>>> call(Customer customer) throws Exception {
+
+				
+				
+				return null;
+			}
+		}) ; 
 		
 		
-//		JavaRDD<Tuple2<String, String, List<Integer>>> wordCounts = customerRDD.flatMap(new FlatMapFunction<Customer,Tuple2<String, String, List<Integer>>>() {
-//		
-//		});
+
 		
 		
 		
