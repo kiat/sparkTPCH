@@ -2,24 +2,21 @@ package edu.rice.exp.spark_exp;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.FlatMapFunction;
-import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.Function2;
-import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 import edu.rice.dmodel.Customer;
 import edu.rice.dmodel.LineItem;
 import edu.rice.dmodel.Order;
-import edu.rice.dmodel.Part;
 import edu.rice.generate_data.DataGenerator;
 
 public class AggregatePartIDsFromCustomer {
@@ -31,7 +28,7 @@ public class AggregatePartIDsFromCustomer {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		long startTime = 0;
 		double elapsedTotalTime = 0;
-		int NUMBER_OF_COPIES =2;
+		int NUMBER_OF_COPIES =1;
 		
 		if(args.length>0)
 		NUMBER_OF_COPIES = Integer.parseInt(args[0]);
@@ -63,22 +60,47 @@ public class AggregatePartIDsFromCustomer {
 
 		
 		
-		JavaRDD< Tuple2<String,  List<Order>>> soldPartIDs1;
-		JavaRDD< Tuple2<String,  List<LineItem>>> soldPartIDs2;
-		JavaRDD< Tuple2<String,  Tuple2<String, List<Part>> > > soldPartIDs3;
+//		JavaRDD<Tuple2<String, Order>>  customerOrders = customerRDD.flatMap(new FlatMapFunction<Customer, Tuple2<String,  Order>>() {
+//			@Override
+//			public Iterator<Tuple2<String, Order>> call(Customer customer) throws Exception {
+//
+//				List<Tuple2<String, Order>> returnList = new ArrayList<Tuple2<String, Order>>();
+//			
+//				List<Order> orders= customer.getOrders(); 
+//				
+//				for (Order order : orders) {
+//					returnList.add(new Tuple2<String, Order>(customer.getName(), order)); 
+//				}
+//				return returnList.iterator();
+//			}
+//		}) ; 
 		
-		JavaRDD<Tuple2<String, List<Integer>>> soldPartIDs=customerRDD.flatMap(new FlatMapFunction<Customer, Tuple2<String, List<Integer>>>() {
+		
+		
+		JavaRDD< Tuple2<String,  LineItem>>  soldLineItems = customerRDD.flatMap(new FlatMapFunction<Customer, Tuple2<String,  LineItem>>() {
+
 			@Override
-			public Iterator<Tuple2<String, List<Integer>>> call(Customer customer) throws Exception {
-
+			public Iterator<Tuple2<String, LineItem>> call(Customer customer) throws Exception {
+				List<Order> orders= customer.getOrders();
 				
-				
-				return null;
-			}
-		}) ; 
+				List<Tuple2<String, LineItem>> returnList = new ArrayList<Tuple2<String, LineItem>>();
+				for (Order order : orders) {
+					List<LineItem> lineItems= order.getLineItems();
+					for (LineItem  lineItem : lineItems) {
+						returnList.add(new Tuple2<String, LineItem>(customer.getName(), lineItem));
+					}
+				}
+				return returnList.iterator();
+			}	
+		});
 		
 		
-
+		JavaPairRDD<String,  Tuple2<String,  Integer>>  soldPartIDs =soldLineItems.mapToPair(w ->  new Tuple2(w._1, new Tuple2(w._2.getSupplier().getName(), w._2.getPart().getPartID()))); 
+		
+		
+		System.out.println(soldPartIDs.take(10));
+		
+		
 		
 		
 		
