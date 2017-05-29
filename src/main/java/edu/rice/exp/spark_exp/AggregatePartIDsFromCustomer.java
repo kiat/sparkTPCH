@@ -12,11 +12,13 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.spark.api.java.function.Function2;
 
 import scala.Tuple2;
 import edu.rice.dmodel.Customer;
 import edu.rice.dmodel.LineItem;
 import edu.rice.dmodel.Order;
+import edu.rice.dmodel.SupplierData;
 import edu.rice.generate_data.DataGenerator;
 
 public class AggregatePartIDsFromCustomer {
@@ -95,10 +97,55 @@ public class AggregatePartIDsFromCustomer {
 		});
 		
 		
-		JavaPairRDD<String,  Tuple2<String,  Integer>>  soldPartIDs =soldLineItems.mapToPair(w ->  new Tuple2(w._1, new Tuple2(w._2.getSupplier().getName(), w._2.getPart().getPartID()))); 
+		JavaPairRDD<String,  Tuple2<String,  Integer>>  soldPartIDs =soldLineItems.mapToPair(w ->  new Tuple2(w._2.getSupplier().getName() , new Tuple2(w._1, w._2.getPart().getPartID()))); 
 		
 		
-		System.out.println(soldPartIDs.take(10));
+//		JavaPairRDD<String,  SupplierData> result=soldPartIDs.reduceByKey(new Function2<Tuple2<String,  Integer>, Tuple2<String,  Integer>, SupplierData>() {
+//
+//			@Override
+//			public SupplierData call(Tuple2<String, Integer> arg0, Tuple2<String, Integer> arg1) throws Exception {
+//
+//				
+//				return null;
+//			}
+//			
+//		}); 
+ 
+//		JavaPairRDD<String,  Tuple2<SupplierData>> result=soldPartIDs.reduceByKey(
+				
+				
+				
+//				new Function2<Tuple2<String,  Integer>, Tuple2<String,  Integer>, Tuple2<SupplierData>>() {
+//
+//			@Override
+//			public Tuple2<SupplierData> call(Tuple2<String, Integer> arg0, Tuple2<String, Integer> arg1) throws Exception {
+//				List<Tuple2<String, Integer>> returnList = new ArrayList<Tuple2<String, Integer>>();
+//
+//				
+//				
+//				return null;
+//			}}
+//				);
+		
+		
+		
+//		// reduce task to count the overall counts of words in all documents
+//				JavaPairRDD<String, Integer> counts = wordsCountPairs.reduceByKey(new Function2<Integer, Integer, Integer>() {
+//
+//					private static final long serialVersionUID = 6834587562219302952L;
+//
+//							@Override
+//							public Integer call(Integer i1, Integer i2) {
+//								return i1 + i2;
+//							}
+//						});
+				
+				
+		List sold=soldPartIDs.take(10);
+		
+		for (Object  object: sold) {
+			System.out.println(object);
+		}
 		
 		
 		
