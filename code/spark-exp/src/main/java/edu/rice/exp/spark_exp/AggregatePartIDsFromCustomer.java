@@ -13,6 +13,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 import edu.rice.dmodel.Customer;
@@ -98,17 +99,32 @@ public class AggregatePartIDsFromCustomer {
 		
 		
 		JavaPairRDD<String,  Tuple2<String,  Integer>>  soldPartIDs =soldLineItems.mapToPair(w ->  new Tuple2(w._2.getSupplier().getName() , new Tuple2(w._1, w._2.getPart().getPartID()))); 
+
 		
 		
-//		JavaPairRDD<String,  SupplierData> result=soldPartIDs.reduceByKey(new Function2<Tuple2<String,  Integer>, Tuple2<String,  Integer>, SupplierData>() {
+		JavaPairRDD<String, Iterable<Tuple2<String,  Integer>>> result=soldPartIDs.groupByKey();
+
+		
+		
+		
+		
+		
+				
+//		JavaPairRDD<String, SupplierData> result=soldPartIDs.reduceByKey(func)
 //
+//			@Override
+//			public SupplierData call(Tuple2<String, Integer> arg0, Tuple2<String, Integer> arg1) throws Exception {
+//				// TODO Auto-generated method stub
+//				return null;
+//			}
+
 //			@Override
 //			public SupplierData call(Tuple2<String, Integer> arg0, Tuple2<String, Integer> arg1) throws Exception {
 //
 //				
 //				return null;
 //			}
-//			
+			
 //		}); 
  
 //		JavaPairRDD<String,  Tuple2<SupplierData>> result=soldPartIDs.reduceByKey(
@@ -141,7 +157,7 @@ public class AggregatePartIDsFromCustomer {
 //						});
 				
 				
-		List sold=soldPartIDs.take(10);
+		List sold=result.take(10);
 		
 		for (Object  object: sold) {
 			System.out.println(object);
