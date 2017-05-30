@@ -33,7 +33,7 @@ public class AggregatePartIDsFromCustomer {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		long startTime = 0;
 		double elapsedTotalTime = 0;
-		int NUMBER_OF_COPIES =1;
+		int NUMBER_OF_COPIES =2;
 		
 		if(args.length>0)
 		NUMBER_OF_COPIES = Integer.parseInt(args[0]);
