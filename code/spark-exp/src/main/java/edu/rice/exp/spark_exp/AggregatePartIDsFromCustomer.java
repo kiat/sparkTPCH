@@ -55,11 +55,11 @@ public class AggregatePartIDsFromCustomer {
 		// Copy the same data multiple times to make it big data 
 		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
 			customerRDD = customerRDD.union(customerRDD);
-			System.out.println("Added " + (i+1) * 15000 + " Customers.");
+//			System.out.println("Added " + (i+1) * 15000 + " Customers.");
 		}
 
 		// force spark to do the job and load data into RDD 
-		System.out.println(customerRDD.count());
+//		System.out.println(customerRDD.count());
 
 		// Now is data loaded in RDD, ready for the experiment
 		// Start the timer
@@ -119,9 +119,8 @@ public class AggregatePartIDsFromCustomer {
 			}});
 		
 
-		
-		
-		result.saveAsTextFile("output.txt");
+	
+		result.saveAsTextFile("output");
 		
 //				
 //		List sold=result.take(10);
