@@ -3,8 +3,10 @@ package edu.rice.exp.spark_exp;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
@@ -39,8 +41,8 @@ public class AggregatePartIDsFromCustomer {
 		PropertyConfigurator.configure("log4j.properties");
 
 		// run on local machine with 8 CPU cores and 8GB spark memory
-		SparkConf sparkConf = new SparkConf().setAppName("ComplexObjectManipulation").setMaster("local[8]").set("spark.executor.memory", "32g");
-//		SparkConf sparkConf = new SparkConf();
+//		SparkConf sparkConf = new SparkConf().setAppName("ComplexObjectManipulation").setMaster("local[8]").set("spark.executor.memory", "32g");
+		SparkConf sparkConf = new SparkConf();
 
 		sc = new JavaSparkContext(sparkConf);
 		
@@ -61,23 +63,6 @@ public class AggregatePartIDsFromCustomer {
 		// Start the timer
 		startTime = System.nanoTime();
 
-		
-		
-//		JavaRDD<Tuple2<String, Order>>  customerOrders = customerRDD.flatMap(new FlatMapFunction<Customer, Tuple2<String,  Order>>() {
-//			@Override
-//			public Iterator<Tuple2<String, Order>> call(Customer customer) throws Exception {
-//
-//				List<Tuple2<String, Order>> returnList = new ArrayList<Tuple2<String, Order>>();
-//			
-//				List<Order> orders= customer.getOrders(); 
-//				
-//				for (Order order : orders) {
-//					returnList.add(new Tuple2<String, Order>(customer.getName(), order)); 
-//				}
-//				return returnList.iterator();
-//			}
-//		}) ; 
-		
 		
 		
 		JavaRDD< Tuple2<String,  LineItem>>  soldLineItems = customerRDD.flatMap(new FlatMapFunction<Customer, Tuple2<String,  LineItem>>() {
@@ -102,79 +87,38 @@ public class AggregatePartIDsFromCustomer {
 
 		
 		
-		JavaPairRDD<String, Iterable<Tuple2<String,  Integer>>> result=soldPartIDs.groupByKey();
+		JavaPairRDD<String, SupplierData> result = soldPartIDs.aggregateByKey(new SupplierData(), new Function2<SupplierData, Tuple2<String,  Integer>, SupplierData>(){
 
-		
-		
-		
-		
-		
-				
-//		JavaPairRDD<String, SupplierData> result=soldPartIDs.reduceByKey(func)
-//
-//			@Override
-//			public SupplierData call(Tuple2<String, Integer> arg0, Tuple2<String, Integer> arg1) throws Exception {
-//				// TODO Auto-generated method stub
-//				return null;
-//			}
+//			private static final long serialVersionUID = 7295222894776950599L;
 
-//			@Override
-//			public SupplierData call(Tuple2<String, Integer> arg0, Tuple2<String, Integer> arg1) throws Exception {
-//
-//				
-//				return null;
-//			}
+			@Override
+			public SupplierData call(SupplierData suppData, Tuple2<String, Integer> tuple) throws Exception {
+				suppData.addCustomer(tuple._1, tuple._2);
+				return suppData;
+			}
 			
-//		}); 
- 
-//		JavaPairRDD<String,  Tuple2<SupplierData>> result=soldPartIDs.reduceByKey(
+		}, new Function2<SupplierData, SupplierData, SupplierData>(){
+//			private static final long serialVersionUID = -1503342516335901464L;
+
+			@Override
+			public SupplierData call(SupplierData suppData1, SupplierData suppData2) throws Exception {
 				
+				 Map<String, List<Integer>> tmp=suppData1.getSoldPartIDs();
+				 tmp.putAll(suppData2.getSoldPartIDs());
+				 suppData1.setSoldPartIDs(tmp);
 				
-				
-//				new Function2<Tuple2<String,  Integer>, Tuple2<String,  Integer>, Tuple2<SupplierData>>() {
-//
-//			@Override
-//			public Tuple2<SupplierData> call(Tuple2<String, Integer> arg0, Tuple2<String, Integer> arg1) throws Exception {
-//				List<Tuple2<String, Integer>> returnList = new ArrayList<Tuple2<String, Integer>>();
-//
-//				
-//				
-//				return null;
-//			}}
-//				);
+				return suppData1;
+			}});
 		
 		
-		
-//		// reduce task to count the overall counts of words in all documents
-//				JavaPairRDD<String, Integer> counts = wordsCountPairs.reduceByKey(new Function2<Integer, Integer, Integer>() {
-//
-//					private static final long serialVersionUID = 6834587562219302952L;
-//
-//							@Override
-//							public Integer call(Integer i1, Integer i2) {
-//								return i1 + i2;
-//							}
-//						});
-				
 				
 		List sold=result.take(10);
 		
 		for (Object  object: sold) {
 			System.out.println(object);
 		}
-		
-		
-		
-		
-		
-		
-//		
-//		// modify each customers, go deep into orders -> lineitems -> parts
-//		JavaRDD<Customer> new_customerRDD = customerRDD.map(customer -> DataGenerator.changeIt(customer));
-//
-//		// to enforce spark to do the job
-//     	System.out.println(new_customerRDD.count());
 
+		
 		// Stop the timer
 		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
 		
