@@ -40,9 +40,11 @@ public class AggregatePartIDsFromCustomer {
 
 		PropertyConfigurator.configure("log4j.properties");
 
-		// run on local machine with 8 CPU cores and 8GB spark memory
-//		SparkConf sparkConf = new SparkConf().setAppName("ComplexObjectManipulation").setMaster("local[8]").set("spark.executor.memory", "32g");
-		SparkConf sparkConf = new SparkConf();
+		SparkConf sparkConf = new SparkConf()
+//		        .setAppName("ComplexObjectManipulation")
+//				.setMaster("local[*]")
+//				.set("spark.executor.memory", "32g")
+				;
 
 		sc = new JavaSparkContext(sparkConf);
 		
@@ -56,16 +58,20 @@ public class AggregatePartIDsFromCustomer {
 			System.out.println("Added " + (i+1) * 15000 + " Customers.");
 		}
 
-		// enforce spark to do the job and load data into RDD 
+		// force spark to do the job and load data into RDD 
 		System.out.println(customerRDD.count());
 
 		// Now is data loaded in RDD, ready for the experiment
 		// Start the timer
 		startTime = System.nanoTime();
 
+	
 		
+
 		
 		JavaRDD< Tuple2<String,  LineItem>>  soldLineItems = customerRDD.flatMap(new FlatMapFunction<Customer, Tuple2<String,  LineItem>>() {
+
+			private static final long serialVersionUID = -7539917700784174380L;
 
 			@Override
 			public Iterator<Tuple2<String, LineItem>> call(Customer customer) throws Exception {
@@ -83,13 +89,15 @@ public class AggregatePartIDsFromCustomer {
 		});
 		
 		
-		JavaPairRDD<String,  Tuple2<String,  Integer>>  soldPartIDs =soldLineItems.mapToPair(w ->  new Tuple2(w._2.getSupplier().getName() , new Tuple2(w._1, w._2.getPart().getPartID()))); 
+		JavaPairRDD<String,  Tuple2<String,  Integer>>  soldPartIDs =soldLineItems.mapToPair(w ->  new Tuple2 <String,  Tuple2<String,  Integer>>(w._2.getSupplier().getName() , new Tuple2<String,  Integer>(w._1, w._2.getPart().getPartID()))); 
 
 		
 		
+		 // Now, we need to aggregate the results 
+		// aggregateByKey needs 3 things, 1. zero initializations, 2. A function to add data to a supplierData object  and 3. merging to supplierData objects. 
 		JavaPairRDD<String, SupplierData> result = soldPartIDs.aggregateByKey(new SupplierData(), new Function2<SupplierData, Tuple2<String,  Integer>, SupplierData>(){
 
-//			private static final long serialVersionUID = 7295222894776950599L;
+			private static final long serialVersionUID = 7295222894776950599L;
 
 			@Override
 			public SupplierData call(SupplierData suppData, Tuple2<String, Integer> tuple) throws Exception {
@@ -98,7 +106,7 @@ public class AggregatePartIDsFromCustomer {
 			}
 			
 		}, new Function2<SupplierData, SupplierData, SupplierData>(){
-//			private static final long serialVersionUID = -1503342516335901464L;
+			private static final long serialVersionUID = -1503342516335901464L;
 
 			@Override
 			public SupplierData call(SupplierData suppData1, SupplierData suppData2) throws Exception {
@@ -110,13 +118,17 @@ public class AggregatePartIDsFromCustomer {
 				return suppData1;
 			}});
 		
+
 		
-				
-		List sold=result.take(10);
 		
-		for (Object  object: sold) {
-			System.out.println(object);
-		}
+		result.saveAsTextFile("output.txt");
+		
+//				
+//		List sold=result.take(10);
+//		
+//		for (Object  object: sold) {
+//			System.out.println(object);
+//		}
 
 		
 		// Stop the timer
