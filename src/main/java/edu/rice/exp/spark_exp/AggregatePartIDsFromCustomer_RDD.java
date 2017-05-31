@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.spark.sql.Dataset;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -22,7 +23,7 @@ import edu.rice.dmodel.Order;
 import edu.rice.dmodel.SupplierData;
 import edu.rice.generate_data.DataGenerator;
 
-public class AggregatePartIDsFromCustomer {
+public class AggregatePartIDsFromCustomer_RDD {
 	
 	
 	private static JavaSparkContext sc;
@@ -47,6 +48,9 @@ public class AggregatePartIDsFromCustomer {
 		sc = new JavaSparkContext(sparkConf);
 		
 		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData());
+		
+//		Dataset customerset
+		
 		
 		customerRDD.cache();
 
