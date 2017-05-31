@@ -99,8 +99,8 @@ public class AggregatePartIDsFromCustomer {
 		 // Now, we need to aggregate the results 
 		// aggregateByKey needs 3 parameters:
 		// 1. zero initializations, 
-		// 2. A function to add data to a supplierData object and 
-		// 3. merging to supplierData objects. 
+		// 2. a function to add data to a supplierData object and 
+		// 3. a function to merge two supplierData objects. 
 		JavaPairRDD<String, SupplierData> result = soldPartIDs.aggregateByKey(new SupplierData(), new Function2<SupplierData, Tuple2<String,  Integer>, SupplierData>(){
 
 			private static final long serialVersionUID = 7295222894776950599L;
