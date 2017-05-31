@@ -63,7 +63,7 @@ public class AggregatePartIDsFromCustomer {
 		// fore to do the garbage collection 
 		System.gc();
 		
-
+       // try to sleep for second to be sure that all other tasks are done 
 		try {
 			Thread.sleep(1000);
 
