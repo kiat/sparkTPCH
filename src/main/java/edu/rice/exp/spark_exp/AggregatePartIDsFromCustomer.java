@@ -63,9 +63,9 @@ public class AggregatePartIDsFromCustomer {
 		// fore to do the garbage collection 
 		System.gc();
 		
-       // try to sleep for a second to be sure that all other tasks are done 
+       // try to sleep for 5 seconds to be sure that all other tasks are done 
 		try {
-			Thread.sleep(1000);
+			Thread.sleep(5000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
