@@ -59,7 +59,18 @@ public class AggregatePartIDsFromCustomer {
 
 		// force spark to do the job and load data into RDD 
 		System.out.println(customerRDD.count());
+		
+		// fore to do the garbage collection 
+		System.gc();
+		
 
+		try {
+			Thread.sleep(1000);
+
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
 		// Now is data loaded in RDD, ready for the experiment
 		// Start the timer
 		startTime = System.nanoTime();
