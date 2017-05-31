@@ -143,7 +143,7 @@ public class DataGenerator {
 		// [S_COMMENT] [varchar](101) NOT NULL
 		// );
 
-//		System.out.println("Start reading Suppliers  ...");
+		System.out.println("Start reading Suppliers  ...");
 
 		try (BufferedReader br = new BufferedReader(new FileReader(SupplierFile))) {
 			String line;
@@ -255,7 +255,7 @@ public class DataGenerator {
 		// O_SHIPPRIORITY INTEGER NOT NULL,
 		// O_COMMENT VARCHAR(79) NOT NULL);
 
-//		System.out.println("Start reading Orders ...");
+		System.out.println("Start reading Orders ...");
 
 		BufferedReader brOrders = new BufferedReader(new FileReader(OrderFile));
 
@@ -311,7 +311,7 @@ public class DataGenerator {
 		// private String comment;
 		//
 
-//		System.out.println("Start reading Customers ...");
+		System.out.println("Start reading Customers ...");
 
 		List<Customer> customerList = new ArrayList<Customer>(150000);
 

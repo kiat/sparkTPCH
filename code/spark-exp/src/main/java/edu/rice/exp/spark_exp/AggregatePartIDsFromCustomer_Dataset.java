@@ -3,11 +3,15 @@ package edu.rice.exp.spark_exp;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Encoder;
+import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.SparkSession;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
@@ -21,8 +25,21 @@ import scala.Tuple2;
 import edu.rice.dmodel.Customer;
 import edu.rice.dmodel.LineItem;
 import edu.rice.dmodel.Order;
+import edu.rice.dmodel.Part;
+import edu.rice.dmodel.Supplier;
 import edu.rice.dmodel.SupplierData;
+import edu.rice.dmodel.TupleCustomerNameLineItem;
 import edu.rice.generate_data.DataGenerator;
+
+
+
+
+
+
+
+//import org.apache.spark.sql.Row;
+//import org.apache.spark.sql.types.StructType;
+//import org.apache.spark.sql.AnalysisException;
 
 public class AggregatePartIDsFromCustomer_Dataset {
 	
@@ -39,138 +56,85 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		NUMBER_OF_COPIES = Integer.parseInt(args[0]);
 
 		PropertyConfigurator.configure("log4j.properties");
-
-		
-		
-//		SparkConf sparkConf = new SparkConf()
-//		        .setAppName("ComplexObjectManipulation")
-//				.setMaster("local[*]")
-//				.set("spark.executor.memory", "32g")
-//				;
-
-		
 		
 		  SparkSession spark = SparkSession
 			      .builder()
 			      .appName("Java Spark SQL basic example")
-			      .config("spark.some.config.option", "some-value")
+//			      .master("local[*]")  just in case that you want to run this on localhost in stand-alone Spark mode 
 			      .getOrCreate();
 		  
+		  Customer cust=new Customer();
+		  cust.setName("Customer-1");
+		  cust.setNationkey(1);
 		  
 		  
 		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-//		  private static void runDatasetCreationExample(SparkSession spark) {
-//			    // $example on:create_ds$
-//			    // Create an instance of a Bean class
-//			    Person person = new Person();
-//			    person.setName("Andy");
-//			    person.setAge(32);
-//
-//			    // Encoders are created for Java beans
-//			    Encoder<Person> personEncoder = Encoders.bean(Person.class);
-//			    Dataset<Person> javaBeanDS = spark.createDataset(
-//			      Collections.singletonList(person),
-//			      personEncoder
-//			    );
-//			    javaBeanDS.show();
-//			    // +---+----+
-//			    // |age|name|
-//			    // +---+----+
-//			    // | 32|Andy|
-//			    // +---+----+
-//
-//			    // Encoders for most common types are provided in class Encoders
-//			    Encoder<Integer> integerEncoder = Encoders.INT();
-//			    Dataset<Integer> primitiveDS = spark.createDataset(Arrays.asList(1, 2, 3), integerEncoder);
-//			    Dataset<Integer> transformedDS = primitiveDS.map(
-//			        (MapFunction<Integer, Integer>) value -> value + 1,
-//			        integerEncoder);
-//			    transformedDS.collect(); // Returns [2, 3, 4]
-//
-//			    // DataFrames can be converted to a Dataset by providing a class. Mapping based on name
-//			    String path = "examples/src/main/resources/people.json";
-//			    Dataset<Person> peopleDS = spark.read().json(path).as(personEncoder);
-//			    peopleDS.show();
-//			    // +----+-------+
-//			    // | age|   name|
-//			    // +----+-------+
-//			    // |null|Michael|
-//			    // |  30|   Andy|
-//			    // |  19| Justin|
-//			    // +----+-------+
-//			    // $example off:create_ds$
-//			  }
+		    // Encoders are created for Java beans
+		    Encoder<Customer> customerEncoder = Encoders.kryo(Customer.class);
+		    Encoder<LineItem> lineItemEncoder = Encoders.kryo(LineItem.class);
+		    Encoder<Order> orderEncoder = Encoders.kryo(Order.class);
+		    Encoder<Supplier> supplierEncoder = Encoders.kryo(Supplier.class);
+		    Encoder<Part> partEncoder = Encoders.kryo(Part.class);
+		    Encoder <TupleCustomerNameLineItem> tupleCustomerNameLineItem=  Encoders.kryo(TupleCustomerNameLineItem.class);
 
+		    
+		    // Create the Dataset using kryo 		    
+		    Dataset<Customer> customerDS = spark.createDataset(DataGenerator.generateData(), 
+		      customerEncoder
+		    );
+		    
+		    
+//		    customerDS.show();
 		  
 		  
+		    // Copy the same data multiple times to make it big data 
+		    // Original number is 15K 
+		    // 2 copy means 15 X 2 =30 x 2 = 60
+		    for (int i = 0; i < NUMBER_OF_COPIES; i++) {
+		    	customerDS=customerDS.union(customerDS);
+		    }
+
+		    customerDS.cache();
+		    System.out.println("Number of Customers in Dataset: "+customerDS.count());
+		    
+//			// fore to do the garbage collection 
+//			System.gc();
+//			
+//	       // try to sleep for 5 seconds to be sure that all other tasks are done 
+//			try {
+//				Thread.sleep(5000);
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
+	
 		  
+			// Now is data loaded in RDD, ready for the experiment
+			// Start the timer
+			startTime = System.nanoTime();
 		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-//		sc = new JavaSparkContext(sparkConf);
-//		
-//		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData());
-//		
-//		Dataset customerset
-//		
-//		
-//		customerRDD.cache();
-//
-//		// Copy the same data multiple times to make it big data 
-//		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
-//			customerRDD = customerRDD.union(customerRDD);
-//		}
-//
-//		// force spark to do the job and load data into RDD 
-//		System.out.println(customerRDD.count());
-//		
-//		// fore to do the garbage collection 
-//		System.gc();
-//		
-//       // try to sleep for 5 seconds to be sure that all other tasks are done 
-//		try {
-//			Thread.sleep(5000);
-//		} catch (InterruptedException e) {
-//			e.printStackTrace();
-//		}
-//		
-		// Now is data loaded in RDD, ready for the experiment
-		// Start the timer
-		startTime = System.nanoTime();
+			
+			Dataset<TupleCustomerNameLineItem> customerNameLineItem = customerDS.flatMap(new FlatMapFunction<Customer, TupleCustomerNameLineItem>() {
+				private static final long serialVersionUID = -3026278471244099707L;
+
+				@Override
+				public Iterator<TupleCustomerNameLineItem> call(Customer customer) throws Exception {
+					List<TupleCustomerNameLineItem> returnList = new ArrayList<TupleCustomerNameLineItem>();
+					List<Order> orders= customer.getOrders();
+					for (Order order : orders) {
+						List<LineItem> lineItems= order.getLineItems();
+						for (LineItem  lineItem : lineItems) {
+							returnList.add(new TupleCustomerNameLineItem(customer.getName(), lineItem));
+						}
+					}
+					return returnList.iterator();
+				}}, tupleCustomerNameLineItem);
 		
-		
-		
+			
+			
+//			customerNameLineItem.show();
+		    System.out.println("Number of TupleCustomerNameLineItem in Dataset: " + customerNameLineItem.count());
+
+
 //		
 //		JavaRDD< Tuple2<String,  LineItem>>  soldLineItems = customerRDD.flatMap(new FlatMapFunction<Customer, Tuple2<String,  LineItem>>() {
 //

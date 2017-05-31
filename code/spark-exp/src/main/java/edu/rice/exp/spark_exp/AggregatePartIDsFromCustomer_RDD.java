@@ -51,13 +51,13 @@ public class AggregatePartIDsFromCustomer_RDD {
 		
 //		Dataset customerset
 		
-		
-		customerRDD.cache();
 
 		// Copy the same data multiple times to make it big data 
 		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
 			customerRDD = customerRDD.union(customerRDD);
 		}
+		
+		customerRDD.cache();
 
 		// force spark to do the job and load data into RDD 
 		System.out.println(customerRDD.count());
