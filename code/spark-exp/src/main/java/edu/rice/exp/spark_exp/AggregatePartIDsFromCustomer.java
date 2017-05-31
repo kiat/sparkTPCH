@@ -55,19 +55,14 @@ public class AggregatePartIDsFromCustomer {
 		// Copy the same data multiple times to make it big data 
 		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
 			customerRDD = customerRDD.union(customerRDD);
-//			System.out.println("Added " + (i+1) * 15000 + " Customers.");
 		}
 
 		// force spark to do the job and load data into RDD 
-//		System.out.println(customerRDD.count());
+		System.out.println(customerRDD.count());
 
 		// Now is data loaded in RDD, ready for the experiment
 		// Start the timer
 		startTime = System.nanoTime();
-
-	
-		
-
 		
 		JavaRDD< Tuple2<String,  LineItem>>  soldLineItems = customerRDD.flatMap(new FlatMapFunction<Customer, Tuple2<String,  LineItem>>() {
 
@@ -89,12 +84,15 @@ public class AggregatePartIDsFromCustomer {
 		});
 		
 		
-		JavaPairRDD<String,  Tuple2<String,  Integer>>  soldPartIDs =soldLineItems.mapToPair(w ->  new Tuple2 <String,  Tuple2<String,  Integer>>(w._2.getSupplier().getName() , new Tuple2<String,  Integer>(w._1, w._2.getPart().getPartID()))); 
-
+		JavaPairRDD<String,  Tuple2<String,  Integer>>  soldPartIDs =soldLineItems
+				.mapToPair(w ->  new Tuple2 <String, Tuple2<String,  Integer>>(w._2.getSupplier().getName() , new Tuple2<String,  Integer>(w._1, w._2.getPart().getPartID()))); 
 		
 		
 		 // Now, we need to aggregate the results 
-		// aggregateByKey needs 3 things, 1. zero initializations, 2. A function to add data to a supplierData object  and 3. merging to supplierData objects. 
+		// aggregateByKey needs 3 parameters:
+		// 1. zero initializations, 
+		// 2. A function to add data to a supplierData object and 
+		// 3. merging to supplierData objects. 
 		JavaPairRDD<String, SupplierData> result = soldPartIDs.aggregateByKey(new SupplierData(), new Function2<SupplierData, Tuple2<String,  Integer>, SupplierData>(){
 
 			private static final long serialVersionUID = 7295222894776950599L;
@@ -119,24 +117,11 @@ public class AggregatePartIDsFromCustomer {
 			}});
 		
 
-	
 		result.saveAsTextFile("output");
-		
-//				
-//		List sold=result.take(10);
-//		
-//		for (Object  object: sold) {
-//			System.out.println(object);
-//		}
-
 		
 		// Stop the timer
 		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
 		
 		System.out.println(String.format("%.9f", elapsedTotalTime));
-
-     	
-		
 	}
-
 }
