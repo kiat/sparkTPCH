@@ -3,7 +3,6 @@ package edu.rice.exp.spark_exp;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +14,6 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function2;
-import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 import edu.rice.dmodel.Customer;
