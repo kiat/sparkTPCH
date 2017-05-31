@@ -3,54 +3,48 @@ package edu.rice.exp.spark_exp;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.PropertyConfigurator;
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.spark.api.java.function.MapFunction;
+import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.Encoders;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
-import org.apache.log4j.PropertyConfigurator;
-import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.api.java.function.FlatMapFunction;
-import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.sql.api.java.UDF1;
 
 import scala.Tuple2;
+import scala.collection.Seq;
 import edu.rice.dmodel.Customer;
 import edu.rice.dmodel.LineItem;
 import edu.rice.dmodel.Order;
 import edu.rice.dmodel.Part;
 import edu.rice.dmodel.Supplier;
+import edu.rice.dmodel.SupplierCustomerPartID;
 import edu.rice.dmodel.SupplierData;
 import edu.rice.dmodel.TupleCustomerNameLineItem;
 import edu.rice.generate_data.DataGenerator;
 
 
+//col("...") is preferable to df.col("...")
+import static org.apache.spark.sql.functions.callUDF;
+import static org.apache.spark.sql.functions.col;
 
-
-
-
-
-//import org.apache.spark.sql.Row;
-//import org.apache.spark.sql.types.StructType;
-//import org.apache.spark.sql.AnalysisException;
 
 public class AggregatePartIDsFromCustomer_Dataset {
 	
-	
-	private static JavaSparkContext sc;
-
-
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		long startTime = 0;
 		double elapsedTotalTime = 0;
-		int NUMBER_OF_COPIES =2;
+		int NUMBER_OF_COPIES =1;
 		
 		if(args.length>0)
 		NUMBER_OF_COPIES = Integer.parseInt(args[0]);
@@ -71,12 +65,9 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		  
 		    // Encoders are created for Java beans
 		    Encoder<Customer> customerEncoder = Encoders.kryo(Customer.class);
-		    Encoder<LineItem> lineItemEncoder = Encoders.kryo(LineItem.class);
-		    Encoder<Order> orderEncoder = Encoders.kryo(Order.class);
-		    Encoder<Supplier> supplierEncoder = Encoders.kryo(Supplier.class);
-		    Encoder<Part> partEncoder = Encoders.kryo(Part.class);
 		    Encoder <TupleCustomerNameLineItem> tupleCustomerNameLineItem=  Encoders.kryo(TupleCustomerNameLineItem.class);
-
+		    Encoder <SupplierCustomerPartID> supplierCustomerPartID_encoder= Encoders.bean(SupplierCustomerPartID.class);
+		    Encoder <SupplierData>   supplierData_encoder= Encoders.bean(SupplierData.class); 
 		    
 		    // Create the Dataset using kryo 		    
 		    Dataset<Customer> customerDS = spark.createDataset(DataGenerator.generateData(), 
@@ -85,7 +76,6 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		    
 		    
 //		    customerDS.show();
-		  
 		  
 		    // Copy the same data multiple times to make it big data 
 		    // Original number is 15K 
@@ -133,8 +123,59 @@ public class AggregatePartIDsFromCustomer_Dataset {
 			
 //			customerNameLineItem.show();
 		    System.out.println("Number of TupleCustomerNameLineItem in Dataset: " + customerNameLineItem.count());
+		    
+		    Dataset<SupplierCustomerPartID>  supplierCustomerPartID_DS=customerNameLineItem.map(new MapFunction<TupleCustomerNameLineItem,SupplierCustomerPartID>(){
 
+				private static final long serialVersionUID = -6842811770278738421L;
 
+				@Override
+				public SupplierCustomerPartID call(TupleCustomerNameLineItem arg0) throws Exception {
+					SupplierCustomerPartID returnValue=new SupplierCustomerPartID(arg0.getCustomerName(), arg0.getLineItem().getSupplier().getName(),  arg0.getLineItem().getPart().getPartID()); 
+					return returnValue;
+				}
+		    	
+		    }, supplierCustomerPartID_encoder);
+		    
+		    supplierCustomerPartID_DS.show(5);
+
+		    Dataset<Row> dataSet1 = supplierCustomerPartID_DS.groupBy("customerName").agg(org.apache.spark.sql.functions.collect_list("supplierName").as("supplierName") ,
+		    		org.apache.spark.sql.functions.collect_list("partID").as("partID")); 
+//		    		). withColumn("supplierName", callUDF("countTokens", col("words"))); 
+//		    		.withColumn("supplierName", new Zipper(new Column("supplierName"), new Column("partID")));
+		    		
+		    dataSet1.show(5);
+		    
+
+		    
+		    dataSet1.toJavaRDD().coalesce(1,true).saveAsTextFile("output");
+		    
+		    
+//		    Dataset<SupplierData>  supplierData_DS= dataSet1.map(new MapFunction<Row, SupplierData>() {
+//				private static final long serialVersionUID = -5684258513081782258L;
+//				@Override
+//				public SupplierData call(Row arg0) throws Exception {
+//					SupplierData returnResult=new SupplierData();
+//					 Map<String, List<Integer>> tmp= new  HashMap<String, List<Integer>>();
+//					 String key=(String)arg0.get(0);
+//					 List<Integer> tmpList= (List<Integer>) arg0.get(1);
+//					 tmp.put(key, tmpList);
+//					return returnResult;
+//				}
+//		    }, supplierData_encoder);
+//		    
+//		    supplierData_DS.show();
+
+//		    Dataset<SupplierCustomerPartID>  supplierCustomerPartID_DS=customerNameLineItem.map(new Function1<TupleCustomerNameLineItem,U>, supplierCustomerPartID_encoder)() {
+//
+//				@Override
+//				public Iterator<SupplierCustomerPartID> call(TupleCustomerNameLineItem arg0) throws Exception {
+//
+//					SupplierCustomerPartID returnValue=new SupplierCustomerPartID(); 
+//					
+//					return returnValue;
+//				}}, supplierCustomerPartID_encoder);
+
+		    
 //		
 //		JavaRDD< Tuple2<String,  LineItem>>  soldLineItems = customerRDD.flatMap(new FlatMapFunction<Customer, Tuple2<String,  LineItem>>() {
 //
