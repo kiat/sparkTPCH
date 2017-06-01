@@ -129,7 +129,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 			}});
 		
 
-		result.saveAsTextFile("output");
+		System.out.println(result.count());
 		
 		// Stop the timer
 		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;

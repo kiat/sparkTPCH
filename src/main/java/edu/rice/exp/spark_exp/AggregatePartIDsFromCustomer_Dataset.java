@@ -128,23 +128,13 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		    	
 		    }, supplierCustomerPartID_encoder);
 		    
-		    supplierCustomerPartID_DS.show(5);
-
-
+//		    supplierCustomerPartID_DS.show(5);
 		    
 		    Dataset<Row> dataSet1 = supplierCustomerPartID_DS.groupBy("customerName").agg(org.apache.spark.sql.functions.collect_list("supplierName"));
 		    		 
+//		    dataSet1.show(5);
 		    
-//		    Dataset<Row> dataSet1 = supplierCustomerPartID_DS.groupBy("customerName").agg(org.apache.spark.sql.functions.collect_list("supplierName").as("supplierName") ,
-//		    		org.apache.spark.sql.functions.collect_list("partID").as("partID")); 
-//		    		). withColumn("supplierName", callUDF("countTokens", col("words"))); 
-//		    		.withColumn("supplierName", new Zipper(new Column("supplierName"), new Column("partID")));
-		    		
-		    
-		    
-		    dataSet1.show(5);
-		    
-		    System.out.println(dataSet1.schema());
+		    System.out.println(dataSet1.count());
 		    
 		// Stop the timer
 		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
