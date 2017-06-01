@@ -70,7 +70,7 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		    );
 		    
 		    
-		    customerDS.show();
+//		    customerDS.show();
 		  
 		    // Copy the same data multiple times to make it big data 
 		    // Original number is 15K 
