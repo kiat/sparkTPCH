@@ -185,7 +185,7 @@ public class AggregatePartIDsFromCustomer_Dataset {
 //		    }, supplierData_encoder );
 
 		    
-		    dataSet1.toJavaRDD().coalesce(1,true).saveAsTextFile("output");
+//		    dataSet1.toJavaRDD().coalesce(1,true).saveAsTextFile("output");
 		    
 		    
 //		    Dataset<SupplierData>  supplierData_DS= dataSet1.map(new MapFunction<Row, SupplierData>() {
