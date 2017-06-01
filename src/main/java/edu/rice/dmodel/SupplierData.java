@@ -11,6 +11,8 @@ public class SupplierData implements Serializable {
 
 	private static final long serialVersionUID = 3745599642319311564L;
 
+	private String customerName;
+	
 	// for each customer the supplier sold to, the list of all partIDs sold
 	private Map<String, List<Integer>> soldPartIDs;
 
@@ -54,7 +56,18 @@ public class SupplierData implements Serializable {
 	
 	
 	public String toString(){
-		return soldPartIDs.toString();
+		
+		return  "("+customerName+", " + soldPartIDs.toString()+")";
+	}
+
+
+	public String getCustomerName() {
+		return customerName;
+	}
+
+
+	public void setCustomerName(String customerName) {
+		this.customerName = customerName;
 	}
 	
 	

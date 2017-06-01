@@ -35,12 +35,17 @@ import edu.rice.generate_data.DataGenerator;
 
 
 //col("...") is preferable to df.col("...")
-import static org.apache.spark.sql.functions.callUDF;
-import static org.apache.spark.sql.functions.col;
+import static  org.apache.spark.sql.functions.*;
+
 
 
 public class AggregatePartIDsFromCustomer_Dataset {
 	
+ 
+	
+	
+	// val zipper = udf[Seq[(String, Double)], Seq[String], Seq[Double]](_.zip(_))
+
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		long startTime = 0;
 		double elapsedTotalTime = 0;
@@ -138,13 +143,46 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		    
 		    supplierCustomerPartID_DS.show(5);
 
-		    Dataset<Row> dataSet1 = supplierCustomerPartID_DS.groupBy("customerName").agg(org.apache.spark.sql.functions.collect_list("supplierName").as("supplierName") ,
-		    		org.apache.spark.sql.functions.collect_list("partID").as("partID")); 
+//		    spark.udf().register("simpleUDF", () -> v * v);
+
+		    
+		    Dataset<Row> dataSet1 = supplierCustomerPartID_DS.groupBy("customerName").agg(org.apache.spark.sql.functions.collect_list("supplierName"));
+		    		 
+		    
+//		    Dataset<Row> dataSet1 = supplierCustomerPartID_DS.groupBy("customerName").agg(org.apache.spark.sql.functions.collect_list("supplierName").as("supplierName") ,
+//		    		org.apache.spark.sql.functions.collect_list("partID").as("partID")); 
 //		    		). withColumn("supplierName", callUDF("countTokens", col("words"))); 
 //		    		.withColumn("supplierName", new Zipper(new Column("supplierName"), new Column("partID")));
 		    		
+		    
+		    
 		    dataSet1.show(5);
 		    
+		    System.out.println(dataSet1.schema());
+		    
+//		    Dataset<SupplierData>  supplierData_DS= dataSet1.map(new MapFunction<Row, SupplierData>() {
+//
+//				private static final long serialVersionUID = -5684258513081782258L;
+//
+//				@Override
+//				public SupplierData call(Row arg0) throws Exception {
+//					SupplierData returnResult=new SupplierData();
+//					String customerName=arg0.getAs("customerName");
+//
+//					Integer[] partIDs= arg0.getAs("partID");
+//					String[] supplierNames= arg0.getAs("supplierName");
+//					
+//					
+//					
+//					
+//					returnResult.setCustomerName(customerName);
+//					
+//					
+//					
+//					return returnResult;
+//				}
+//		    	
+//		    }, supplierData_encoder );
 
 		    
 		    dataSet1.toJavaRDD().coalesce(1,true).saveAsTextFile("output");
