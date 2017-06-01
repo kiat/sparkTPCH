@@ -143,7 +143,6 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		    
 		    supplierCustomerPartID_DS.show(5);
 
-//		    spark.udf().register("simpleUDF", () -> v * v);
 
 		    
 		    Dataset<Row> dataSet1 = supplierCustomerPartID_DS.groupBy("customerName").agg(org.apache.spark.sql.functions.collect_list("supplierName"));

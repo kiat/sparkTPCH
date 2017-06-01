@@ -1,6 +1,9 @@
 
+# Build it 
+mvn clean package 
 
-# Submitting spark application to a remote cluster using spark-submit 
+
+# Submitting to Spark Cluster using spark-submit 
 
 spark-submit   \\ 
     --master spark://cslinux18.cs.rice.edu:7077  --class edu.rice.exp.spark_exp.AggregatePartIDsFromCustomer_RDD  \\ 
