@@ -82,16 +82,6 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		    customerDS.cache();
 		    System.out.println("Number of Customers in Dataset: "+customerDS.count());
 		    
-			// fore to do the garbage collection 
-			System.gc();
-			
-	       // try to sleep for 5 seconds to be sure that all other tasks are done 
-			try {
-				Thread.sleep(5000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-	
 		  
 			// Now is data loaded in RDD, ready for the experiment
 			// Start the timer
