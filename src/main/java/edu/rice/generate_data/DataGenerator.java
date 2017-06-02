@@ -72,7 +72,7 @@ public class DataGenerator {
 
 	public static List<Customer> generateData() throws FileNotFoundException, IOException {
 
-		String filename = "0.1";
+		String filename = "0.2";
 		
 		String PartFile = "tables_scale_" + filename + "/part.tbl";
 		String SupplierFile = "tables_scale_" + filename + "/supplier.tbl";
