@@ -35,6 +35,8 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		long startTime = 0;
 		double elapsedTotalTime = 0;
 		int NUMBER_OF_COPIES = 0;
+		String fileScale="0.1";
+		
 
 		if (args.length > 0)
 			NUMBER_OF_COPIES = Integer.parseInt(args[0]);
@@ -68,7 +70,10 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		// bytes, which exceeds max allowed: spark.rpc.message.maxSize
 		// (134217728 bytes). Consider increasing
 
-		List<Customer> customerData = DataGenerator.generateData();
+		if (args.length > 1)
+			fileScale = args[1];
+
+		List<Customer> customerData = DataGenerator.generateData(fileScale);
 
 		List<Customer> customerData_tmp = new ArrayList<Customer>(5000);
 

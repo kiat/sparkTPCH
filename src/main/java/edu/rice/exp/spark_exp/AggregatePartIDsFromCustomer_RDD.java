@@ -33,6 +33,8 @@ public class AggregatePartIDsFromCustomer_RDD {
 		long startTime = 0;
 		double elapsedTotalTime = 0;
 		int NUMBER_OF_COPIES =0;
+		String fileScale="0.1";
+
 		
 		if(args.length>0)
 		NUMBER_OF_COPIES = Integer.parseInt(args[0]);
@@ -47,7 +49,10 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 		sc = new JavaSparkContext(sparkConf);
 		
-		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData());
+		if (args.length > 1)
+			fileScale = args[1];
+		
+		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale));
 		
 //		Dataset customerset
 		
