@@ -99,8 +99,12 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		}
 
 		customerDS.cache();
-		System.out.println("Number of Customers in Dataset: " + customerDS.count());
-
+		// force spark to do the job and load data into RDD 
+		
+		long numberOfCustomers=customerDS.count();
+		System.out.println("Number of Customer: " + numberOfCustomers);
+		
+		
 		// Now is data loaded in RDD, ready for the experiment
 		// Start the timer
 		startTime = System.nanoTime();
@@ -148,6 +152,6 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		// Stop the timer
 		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
 
-		System.out.println(String.format("%.9f", elapsedTotalTime));
+		System.out.println(numberOfCustomers+"#" +String.format("%.9f", elapsedTotalTime));
 	}
 }
