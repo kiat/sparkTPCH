@@ -93,6 +93,30 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		// force spark to do the job and load data into RDD
 		customerDS.cache();
 
+		
+		
+		// fore to do the garbage collection 
+		System.gc();
+		
+
+		// try to sleep for 5 seconds to be sure that all other tasks are done 
+		for (int i = 0; i < args.length; i++) {
+			try {
+				Thread.sleep(1000);
+				System.out.println("Sleep for 1 sec ... ");
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}	
+		}
+		
+		
+		
+		
+		System.out.println("Data is ready to use. ");
+		
+		
+		
+		
 		// Now is the data generated and cached
 
 		// #############################################
@@ -209,8 +233,8 @@ public class AggregatePartIDsFromCustomer_Dataset {
 
 		 
 //		 finalResults.show();
-		 List<SupplierData> someResults= finalResults.takeAsList(1);
-		 System.out.println(someResults);
+//		 List<SupplierData> someResults= finalResults.takeAsList(1);
+//		 System.out.println(someResults);
 		
 		 System.out.println(finalResults.count());
 
