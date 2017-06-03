@@ -146,11 +146,8 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 			@Override
 			public SupplierData call(SupplierData suppData1, SupplierData suppData2) throws Exception {
-				
-				 Map<String, List<Integer>> tmp=suppData1.getSoldPartIDs();
-				 tmp.putAll(suppData2.getSoldPartIDs());
-				 suppData1.setSoldPartIDs(tmp);
-				
+				// merge the two HashMaps inside the SupplierData
+				suppData1.merge(suppData2);
 				return suppData1;
 			}});
 		
