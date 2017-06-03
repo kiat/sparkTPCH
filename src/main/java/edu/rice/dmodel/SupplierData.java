@@ -74,29 +74,10 @@ public class SupplierData implements Serializable {
 	
 	
 	public void merge(SupplierData sd){
-		
-		Map<String, List<Integer>> other_soldPartIDs=sd.getSoldPartIDs();
-		
-		Iterator<String> it=other_soldPartIDs.keySet().iterator();
-		
-		while (it.hasNext()) {
-			String key = it.next();
-			
-			List<Integer> tmpIDList;
 
-			if (this.soldPartIDs.containsKey(key)) {
-				// get the List and aggregate PartID to the existing list
-				tmpIDList = soldPartIDs.get(key);
-				tmpIDList.addAll(other_soldPartIDs.get(key));
-			} else {
-				//tmp list is the other list
-				tmpIDList = other_soldPartIDs.get(key);
-			}
-			// Put it back into the list
-			this.soldPartIDs.put(key, tmpIDList);
-		}
-
-		
+		 Map<String, List<Integer>> tmp=sd.getSoldPartIDs();
+		 tmp.putAll(this.getSoldPartIDs());
+		 this.setSoldPartIDs(tmp);
 	}
 	
 	

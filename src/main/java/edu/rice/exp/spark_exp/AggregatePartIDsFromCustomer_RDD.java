@@ -155,7 +155,11 @@ public class AggregatePartIDsFromCustomer_RDD {
 			}});
 		
 
-		System.out.println(result.count());
+		
+		// At the end, what we need is a vector of SupplierData 
+		JavaRDD<SupplierData> resultFinal = result.map(x -> x._2);
+		
+		System.out.println(resultFinal.count());
 		
 		// Stop the timer
 		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
