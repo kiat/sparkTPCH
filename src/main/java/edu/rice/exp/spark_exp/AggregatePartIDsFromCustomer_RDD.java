@@ -69,6 +69,19 @@ public class AggregatePartIDsFromCustomer_RDD {
 		long numberOfCustomers=customerRDD.count();
 		System.out.println("Number of Customer: " + numberOfCustomers);
 		
+		
+		
+		
+		
+		
+		// #############################################
+		// #############################################
+		// #########     MAIN Experiment   #############
+		// #############################################
+		// #############################################
+		
+		
+		
 		// Now is data loaded in RDD, ready for the experiment
 		// Start the timer
 		startTime = System.nanoTime();
