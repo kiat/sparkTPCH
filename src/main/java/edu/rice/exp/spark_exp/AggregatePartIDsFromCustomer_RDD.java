@@ -75,7 +75,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 		
 
 		// try to sleep for 5 seconds to be sure that all other tasks are done 
-		for (int i = 0; i < args.length; i++) {
+		for (int i = 0; i < 5; i++) {
 			try {
 				Thread.sleep(1000);
 				System.out.println("Sleep for 1 sec ... ");
