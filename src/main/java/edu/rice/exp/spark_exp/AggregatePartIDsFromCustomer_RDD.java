@@ -5,9 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
-import org.apache.spark.sql.Dataset;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -33,7 +31,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 		long startTime = 0;
 		double elapsedTotalTime = 0;
 		int NUMBER_OF_COPIES =0;
-		String fileScale="0.1";
+		String fileScale="0.2";
 
 		
 		if(args.length>0)
@@ -42,9 +40,9 @@ public class AggregatePartIDsFromCustomer_RDD {
 		PropertyConfigurator.configure("log4j.properties");
 
 		SparkConf sparkConf = new SparkConf()
-//		        .setAppName("ComplexObjectManipulation")
-//				.setMaster("local[*]")
-//				.set("spark.executor.memory", "32g")
+		        .setAppName("ComplexObjectManipulation")
+				.setMaster("local[*]")
+				.set("spark.executor.memory", "32g")
 				;
 
 		sc = new JavaSparkContext(sparkConf);
@@ -54,9 +52,6 @@ public class AggregatePartIDsFromCustomer_RDD {
 		
 		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale));
 		
-//		Dataset customerset
-		
-
 		// Copy the same data multiple times to make it big data 
 		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
 			customerRDD = customerRDD.union(customerRDD);
@@ -84,11 +79,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 			}	
 		}
 		
-		
-		
-		
 		System.out.println("Data is ready to use. ");
-
 		
 		// #############################################
 		// #############################################
@@ -96,35 +87,32 @@ public class AggregatePartIDsFromCustomer_RDD {
 		// #############################################
 		// #############################################
 		
-		
-		
 		// Now is data loaded in RDD, ready for the experiment
 		// Start the timer
 		startTime = System.nanoTime();
 		
-		JavaRDD< Tuple2<String,  LineItem>>  soldLineItems = customerRDD.flatMap(new FlatMapFunction<Customer, Tuple2<String,  LineItem>>() {
+		JavaRDD<Tuple2<String,  Tuple2<String, Integer>>>  soldLineItems2 = customerRDD.flatMap(new FlatMapFunction<Customer, Tuple2<String,  Tuple2<String, Integer>>>() {
 
 			private static final long serialVersionUID = -7539917700784174380L;
 
 			@Override
-			public Iterator<Tuple2<String, LineItem>> call(Customer customer) throws Exception {
+			public Iterator<Tuple2<String, Tuple2<String, Integer>>> call(Customer customer) throws Exception {
 				List<Order> orders= customer.getOrders();
-				
-				List<Tuple2<String, LineItem>> returnList = new ArrayList<Tuple2<String, LineItem>>();
+				List<Tuple2<String, Tuple2<String, Integer>>> returnList = new ArrayList<Tuple2<String, Tuple2<String, Integer>>>();
 				for (Order order : orders) {
 					List<LineItem> lineItems= order.getLineItems();
 					for (LineItem  lineItem : lineItems) {
-						returnList.add(new Tuple2<String, LineItem>(customer.getName(), lineItem));
+						Tuple2<String, Integer> supplierPartID=new Tuple2<String, Integer>(customer.getName(), lineItem.getPart().getPartID() );
+						returnList.add(new Tuple2<String, Tuple2<String, Integer>>(lineItem.getSupplier().getName() , supplierPartID));
 					}
 				}
 				return returnList.iterator();
 			}	
 		});
 		
-		
-		JavaPairRDD<String,  Tuple2<String,  Integer>>  soldPartIDs =soldLineItems
-				.mapToPair(w ->  new Tuple2 <String, Tuple2<String,  Integer>>(w._2.getSupplier().getName() , new Tuple2<String,  Integer>(w._1, w._2.getPart().getPartID()))); 
-		
+
+		JavaPairRDD<String,  Tuple2<String,  Integer>>  soldPartIDs =soldLineItems2
+		.mapToPair(w ->  new Tuple2 <String, Tuple2<String,  Integer>>(w._1 , w._2)); 
 		
 		 // Now, we need to aggregate the results 
 		// aggregateByKey needs 3 parameters:
@@ -152,11 +140,10 @@ public class AggregatePartIDsFromCustomer_RDD {
 			}});
 		
 
-		
 		// At the end, what we need is a vector of SupplierData 
 		JavaRDD<SupplierData> resultFinal = result.map(x -> x._2);
 		
-		System.out.println(resultFinal.count());
+		System.out.println("Final Result Count:"+resultFinal.count());
 		
 		// Stop the timer
 		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
