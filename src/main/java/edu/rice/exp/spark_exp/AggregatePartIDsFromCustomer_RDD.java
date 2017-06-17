@@ -31,7 +31,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 		long startTime = 0;
 		double elapsedTotalTime = 0;
 		int NUMBER_OF_COPIES =0;
-		String fileScale="0.2";
+		String fileScale="0.1";
 
 		
 		if(args.length>0)
