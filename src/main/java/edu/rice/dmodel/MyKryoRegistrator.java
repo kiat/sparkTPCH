@@ -67,7 +67,6 @@ public class MyKryoRegistrator implements KryoRegistrator, Serializable {
 		kryo.register(Object[].class);
 		kryo.register(scala.Tuple2[].class);
 
-		kryo.register(java.util.List.class);
 		kryo.register(java.util.ArrayList.class);
 		kryo.register(java.util.HashMap.class);
 
@@ -77,7 +76,6 @@ public class MyKryoRegistrator implements KryoRegistrator, Serializable {
 		kryo.register(edu.rice.dmodel.Order.class);
 		kryo.register(edu.rice.dmodel.LineItem.class);
 		kryo.register(edu.rice.dmodel.Customer.class);
-		kryo.register(edu.rice.dmodel.SupplierData.class);
 		
 
 		doRegistration(kryo, "scala.collection.mutable.WrappedArray$ofRef");
