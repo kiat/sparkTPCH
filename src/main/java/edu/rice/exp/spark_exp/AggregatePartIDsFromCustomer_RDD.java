@@ -41,9 +41,9 @@ public class AggregatePartIDsFromCustomer_RDD {
 		PropertyConfigurator.configure("log4j.properties");
 
 		SparkConf conf = new SparkConf();
-		// .setAppName("ComplexObjectManipulation")
-		// .setMaster("local[*]")
-		// .set("spark.executor.memory", "32g");
+		
+		// conf.set("spark.executor.memory", "32g");
+//		conf.setMaster("local[*]");
 		conf.setAppName("ComplexObjectManipulation_RDD");
 
 		// Kryo Serialization
@@ -74,11 +74,6 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 		long numberOfCustomers = customerRDD.count();
 		System.out.println("Number of Customer: " + numberOfCustomers);
-
-		// // fore to do the garbage collection
-		// System.gc();
-		//
-		//
 
 		// try to sleep for 5 seconds to be sure that all other tasks are done
 		for (int i = 0; i < 5; i++) {

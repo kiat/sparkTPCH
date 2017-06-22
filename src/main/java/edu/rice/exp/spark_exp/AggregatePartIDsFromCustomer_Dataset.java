@@ -23,32 +23,36 @@ import edu.rice.dmodel.Customer;
 import edu.rice.dmodel.LineItem;
 import edu.rice.dmodel.Order;
 import edu.rice.dmodel.SupplierData;
-import edu.rice.dmodel.TupleCustomerNameLineItem;
 import edu.rice.generate_data.DataGenerator;
 
 public class AggregatePartIDsFromCustomer_Dataset {
 
 
-	static int NUMBER_OF_ReplicationsOfData = 0;
+
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		long startTime = 0;
-		double elapsedTotalTime = 0;
+		double elapsedTotalTime = 1;
 		String fileScale = "0.1";
 
+		int NUMBER_OF_COPIES=0;
+		
 		if (args.length > 0)
-			NUMBER_OF_ReplicationsOfData = Integer.parseInt(args[0]);
+			NUMBER_OF_COPIES = Integer.parseInt(args[0]);
 
+		if (args.length > 1)
+			fileScale = args[1];
+		
+		
 		PropertyConfigurator.configure("log4j.properties");
 
 		SparkSession spark = SparkSession.builder().appName("Java Spark SQL basic example")
 				// just in case that you want to run this on localhost in stand-alone Spark mode
-				.master("local[*]") 
+//				.master("local[*]") 
 				.getOrCreate();
 
 		// Encoders are created for Java beans
 		Encoder<Customer> customerEncoder = Encoders.kryo(Customer.class);
-		Encoder<TupleCustomerNameLineItem> tupleCustomerNameLineItem = Encoders.kryo(TupleCustomerNameLineItem.class);
 		Encoder<SupplierData> supplierData_encoder = Encoders.kryo(SupplierData.class);
 
 		// With huge list of Customer objects I got this exception
@@ -86,18 +90,13 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		// Copy the same data multiple times to make it big data
 		// Original number is 15K
 		// 2 copy means 15 X 2 =30 x 2 = 60
-		for (int i = 0; i < NUMBER_OF_ReplicationsOfData; i++) {
+		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
 			customerDS = customerDS.union(customerDS);
 		}
 
 		// force spark to do the job and load data into RDD
 		customerDS.cache();
 
-		
-		
-		// fore to do the garbage collection 
-		System.gc();
-		
 
 		// try to sleep for 5 seconds to be sure that all other tasks are done 
 		for (int i = 0; i < 5; i++) {
@@ -133,71 +132,51 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		startTime = System.nanoTime();
 
 		
-		
-		
-		
-		// First stage is to get the LineItems out of the Customer Objects 
-		Dataset<TupleCustomerNameLineItem> customerNameLineItem = customerDS.flatMap(new FlatMapFunction<Customer, TupleCustomerNameLineItem>() {
+		Dataset<SupplierData> customerNameLineItem = customerDS.flatMap(new FlatMapFunction<Customer, SupplierData>() {
+
 			private static final long serialVersionUID = -3026278471244099707L;
 
 			@Override
-			public Iterator<TupleCustomerNameLineItem> call(Customer customer) throws Exception {
-				List<TupleCustomerNameLineItem> returnList = new ArrayList<TupleCustomerNameLineItem>();
+			public Iterator<SupplierData> call(Customer customer) throws Exception {
+				List<SupplierData> returnList = new ArrayList<SupplierData>();
+				
+				Map<String, List<Integer>> soldPartIDs = new HashMap<String, List<Integer>>();
+
+				
 				List<Order> orders = customer.getOrders();
 				for (Order order : orders) {
 					List<LineItem> lineItems = order.getLineItems();
 					for (LineItem lineItem : lineItems) {
-						returnList.add(new TupleCustomerNameLineItem(customer.getName(), lineItem));
+						
+						List<Integer> partIDs = new ArrayList<Integer>();
+						partIDs.add((Integer) lineItem.getPart().getPartID());
+						
+						soldPartIDs.put(customer.getName(), partIDs);
+						SupplierData mySupplierData =new SupplierData();
+						
+						mySupplierData.setSupplierName(lineItem.getSupplier().getName());
+						mySupplierData.setSoldPartIDs(soldPartIDs);
+						returnList.add(mySupplierData);
+						
 					}
 				}
 				return returnList.iterator();
 			}
-		}, tupleCustomerNameLineItem);
-
-		System.out.println("Number of TupleCustomerNameLineItem in Dataset: " + customerNameLineItem.count());
-
-		
-		
-		
-		
-		
-		// We need to return supplierData from here so that we can aggregate
-		// them in the next step.
-		Dataset<SupplierData> supplierCustomerPartID_DS = customerNameLineItem.map(new MapFunction<TupleCustomerNameLineItem, SupplierData>() {
-
-			private static final long serialVersionUID = -6842811770278738421L;
-
-			@Override
-			public SupplierData call(TupleCustomerNameLineItem arg0) throws Exception {
-
-				SupplierData returnValue = new SupplierData();
-				Map<String, List<Integer>> soldPartIDs = new HashMap<String, List<Integer>>();
-				List<Integer> partIDs = new ArrayList<Integer>();
-
-				returnValue.setCustomerName(arg0.getCustomerName());
-				partIDs.add((Integer) arg0.getLineItem().getPart().getPartID());
-				soldPartIDs.put(arg0.getLineItem().getSupplier().getName(), partIDs);
-
-				returnValue.setSoldPartIDs(soldPartIDs);
-				return returnValue;
-			}
-
 		}, supplierData_encoder);
-
 		
 		
 		
 		
 		
 		// Now Group the SupplierData by customer name as Key
-		KeyValueGroupedDataset<String, SupplierData> grouped_supplierCustomerPartID_DS = supplierCustomerPartID_DS.groupByKey(new MapFunction<SupplierData, String>() {
+		KeyValueGroupedDataset<String, SupplierData> grouped_supplierCustomerPartID_DS = customerNameLineItem.groupByKey(new MapFunction<SupplierData, String>() {
 
 			private static final long serialVersionUID = -2443168521619624534L;
 
 			@Override
 			public String call(SupplierData arg0) throws Exception {
 
-				return arg0.getCustomerName();
+				return arg0.getSupplierName();
 			}
 		}, Encoders.STRING());
 
@@ -222,21 +201,21 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		
 		
 		
-		 // Produce the final Result as a dataset of SupplierData Objects
-		 Dataset<SupplierData> finalResults=reduced_supplierCustomerPartID_DS.map(new MapFunction<Tuple2<String, SupplierData>, SupplierData>() {
-			private static final long serialVersionUID = 1092513431731531012L;
-			@Override
-			public SupplierData call(Tuple2<String, SupplierData> arg0) throws Exception {
-				return arg0._2;
-			}
-		}, supplierData_encoder);
-
-		 
+//		 // Produce the final Result as a dataset of SupplierData Objects
+//		 Dataset<SupplierData> finalResults=reduced_supplierCustomerPartID_DS.map(new MapFunction<Tuple2<String, SupplierData>, SupplierData>() {
+//			private static final long serialVersionUID = 1092513431731531012L;
+//			@Override
+//			public SupplierData call(Tuple2<String, SupplierData> arg0) throws Exception {
+//				return arg0._2;
+//			}
+//		}, supplierData_encoder);
+//
+//		 
 //		 finalResults.show();
 //		 List<SupplierData> someResults= finalResults.takeAsList(1);
 //		 System.out.println(someResults);
 		
-		 System.out.println(finalResults.count());
+		 System.out.println(reduced_supplierCustomerPartID_DS.count());
 
 		// Stop the timer
 		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
