@@ -2,6 +2,8 @@
 # Build it 
 mvn clean package 
 
+mvn clean compile assembly:single
+
 
 # Submitting to Spark Cluster using spark-submit 
 
