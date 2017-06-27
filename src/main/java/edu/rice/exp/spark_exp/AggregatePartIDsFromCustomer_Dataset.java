@@ -44,7 +44,7 @@ public class AggregatePartIDsFromCustomer_Dataset {
 			fileScale = args[1];
 		
 		
-		PropertyConfigurator.configure("log4j.properties");
+//		PropertyConfigurator.configure("log4j.properties");
 
 		SparkSession spark = SparkSession.builder().appName("Java Spark SQL basic example")
 				// just in case that you want to run this on localhost in stand-alone Spark mode

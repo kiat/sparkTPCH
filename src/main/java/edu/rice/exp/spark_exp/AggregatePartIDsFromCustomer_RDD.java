@@ -38,11 +38,14 @@ public class AggregatePartIDsFromCustomer_RDD {
 		if (args.length > 1)
 			fileScale = args[1];
 
-		PropertyConfigurator.configure("log4j.properties");
+//		PropertyConfigurator.configure("log4j.properties");
 
 		SparkConf conf = new SparkConf();
 		
-		// conf.set("spark.executor.memory", "32g");
+//		conf.set("spark.executor.memory", "15g");
+//		conf.set("spark.cores.max", "8");
+		
+		
 //		conf.setMaster("local[*]");
 		conf.setAppName("ComplexObjectManipulation_RDD");
 
@@ -58,6 +61,11 @@ public class AggregatePartIDsFromCustomer_RDD {
 			fileScale = args[1];
 
 		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale));
+		
+		
+//		customerRDD.saveAsObjectFile("file");
+//		JavaRDD<Customer> customerRDD = sc.objectFile(""); 
+		
 
 		// Copy the same data multiple times to make it big data
 		for (int i = 0; i < NUMBER_OF_COPIES; i++) {

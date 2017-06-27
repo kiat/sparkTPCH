@@ -73,12 +73,12 @@ public class DataGenerator {
 	public static List<Customer> generateData(String filename) throws FileNotFoundException, IOException {
 
 //		filename = "0.1";
-		
-		String PartFile = "tables_scale_" + filename + "/part.tbl";
-		String SupplierFile = "tables_scale_" + filename + "/supplier.tbl";
-		String OrderFile = "tables_scale_" + filename + "/orders.tbl";
-		String LineitemFile = "tables_scale_" + filename + "/lineitem.tbl";
-		String CustomerFile = "tables_scale_" + filename + "/customer.tbl";
+		// NOTE: Hard coded data path. 
+		String PartFile = "/mnt/data/tables_scale_" + filename + "/part.tbl";
+		String SupplierFile = "/mnt/data/tables_scale_" + filename + "/supplier.tbl";
+		String OrderFile = "/mnt/data/sparkTPCH/tables_scale_" + filename + "/orders.tbl";
+		String LineitemFile = "/mnt/data/tables_scale_" + filename + "/lineitem.tbl";
+		String CustomerFile = "/mnt/data/tables_scale_" + filename + "/customer.tbl";
 
 		HashMap<Integer, Part> partMap = new HashMap<Integer, Part>(6000000);
 		HashMap<Integer, Supplier> supplierMap = new HashMap<Integer, Supplier>(100000);
