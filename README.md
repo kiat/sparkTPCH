@@ -17,6 +17,10 @@ spark-submit   \\
 spark-submit  --master spark://ip-10-150-167-66.ec2.internal:7077   --class edu.rice.exp.spark_exp.AggregatePartIDsFromCustomer_RDD  --deploy-mode cluster   --executor-cores 8  --queue default  /home/ubuntu/sparkTPCH/target/spark-exp-0.0.1-SNAPSHOT-jar-with-dependencies.jar
 
 
+
+./spark-2.1.1-bin-hadoop2.7/bin/spark-submit --master spark://cslinux18.cs.rice.edu:7077   --class edu.rice.exp.spark_exp.AggregatePartIDsFromCustomer_RDD  --deploy-mode cluster  file:///home/ubuntu/spark-exp-0.0.1-SNAPSHOT-jar-with-dependencies.jar
+
+
 # Data Path 
 
 data should be placed in folder 
