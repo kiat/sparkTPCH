@@ -28,7 +28,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		long startTime = 0;
 		double elapsedTotalTime = 0;
-		int REPLICATION_FACTOR = 1;
+		int REPLICATION_FACTOR = 1;// number of Customers multiply X 2^REPLICATION_FACTOR
 		String fileScale = "0.2";
 
 		if (args.length > 0)
@@ -46,6 +46,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 //		conf.set("spark.default.parallelism", "8");
 //		conf.set("spark.executor.cores", "8");
 //		conf.setMaster("local[*]");
+		
 		conf.setAppName("ComplexObjectManipulation_RDD");
 
 		// Kryo Serialization
@@ -86,7 +87,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 //		for (int i = 0; i < 5; i++) {
 //			try {
 //				Thread.sleep(1000);
-//				System.out.println("Sleep for 1 sec ... ");
+//				System.out.println("Sleep "+i+" sec ... ");
 //			} catch (InterruptedException e) {
 //				e.printStackTrace();
 //			}
