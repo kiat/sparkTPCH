@@ -76,7 +76,7 @@ public class DataGenerator {
 		// NOTE: Hard coded data path. 
 		String PartFile = "/mnt/data/tables_scale_" + filename + "/part.tbl";
 		String SupplierFile = "/mnt/data/tables_scale_" + filename + "/supplier.tbl";
-		String OrderFile = "/mnt/data/sparkTPCH/tables_scale_" + filename + "/orders.tbl";
+		String OrderFile = "/mnt/data/tables_scale_" + filename + "/orders.tbl";
 		String LineitemFile = "/mnt/data/tables_scale_" + filename + "/lineitem.tbl";
 		String CustomerFile = "/mnt/data/tables_scale_" + filename + "/customer.tbl";
 

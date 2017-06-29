@@ -8,7 +8,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -29,11 +28,11 @@ public class AggregatePartIDsFromCustomer_RDD {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		long startTime = 0;
 		double elapsedTotalTime = 0;
-		int NUMBER_OF_COPIES = 0;
-		String fileScale = "0.1";
+		int REPLICATION_FACTOR = 1;
+		String fileScale = "0.2";
 
 		if (args.length > 0)
-			NUMBER_OF_COPIES = Integer.parseInt(args[0]);
+			REPLICATION_FACTOR = Integer.parseInt(args[0]);
 
 		if (args.length > 1)
 			fileScale = args[1];
@@ -44,8 +43,8 @@ public class AggregatePartIDsFromCustomer_RDD {
 		
 //		conf.set("spark.executor.memory", "15g");
 //		conf.set("spark.cores.max", "8");
-		
-		
+//		conf.set("spark.default.parallelism", "8");
+//		conf.set("spark.executor.cores", "8");
 //		conf.setMaster("local[*]");
 		conf.setAppName("ComplexObjectManipulation_RDD");
 
@@ -68,7 +67,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 		
 
 		// Copy the same data multiple times to make it big data
-		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
+		for (int i = 1; i < REPLICATION_FACTOR; i++) {
 			customerRDD = customerRDD.union(customerRDD);
 		}
 
@@ -83,17 +82,17 @@ public class AggregatePartIDsFromCustomer_RDD {
 		long numberOfCustomers = customerRDD.count();
 		System.out.println("Number of Customer: " + numberOfCustomers);
 
-		// try to sleep for 5 seconds to be sure that all other tasks are done
-		for (int i = 0; i < 5; i++) {
-			try {
-				Thread.sleep(1000);
-				System.out.println("Sleep for 1 sec ... ");
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-
-		System.out.println("Data is ready to use. ");
+//		// try to sleep for 5 seconds to be sure that all other tasks are done
+//		for (int i = 0; i < 5; i++) {
+//			try {
+//				Thread.sleep(1000);
+//				System.out.println("Sleep for 1 sec ... ");
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
+//		}
+//
+//		System.out.println("Data is ready to use. ");
 
 		// #############################################
 		// #############################################
@@ -170,12 +169,14 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 				});
 
+		
+		long finalResultCount=result.count();
 
-		System.out.println("Final Result Count:" + result.count());
+		System.out.println("Final Result Count:" + finalResultCount);
 
 		// Stop the timer
 		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
 
-		System.out.println(numberOfCustomers + "#" + String.format("%.9f", elapsedTotalTime));
+		System.out.println(fileScale+"#"+REPLICATION_FACTOR+"#"+numberOfCustomers + "#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
 	}
 }
