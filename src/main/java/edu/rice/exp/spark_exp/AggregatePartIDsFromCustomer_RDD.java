@@ -8,12 +8,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.storage.StorageLevel;
 
 import scala.Tuple2;
 import edu.rice.dmodel.Customer;
@@ -28,7 +30,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		long startTime = 0;
 		double elapsedTotalTime = 0;
-		int REPLICATION_FACTOR = 1;// number of Customers multiply X 2^REPLICATION_FACTOR
+		int REPLICATION_FACTOR = 2;// number of Customers multiply X 2^REPLICATION_FACTOR
 		String fileScale = "0.2";
 
 		if (args.length > 0)
@@ -37,7 +39,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 		if (args.length > 1)
 			fileScale = args[1];
 
-//		PropertyConfigurator.configure("log4j.properties");
+		PropertyConfigurator.configure("log4j.properties");
 
 		SparkConf conf = new SparkConf();
 		
@@ -45,7 +47,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 //		conf.set("spark.cores.max", "8");
 //		conf.set("spark.default.parallelism", "8");
 //		conf.set("spark.executor.cores", "8");
-//		conf.setMaster("local[*]");
+		conf.setMaster("local[*]");
 		
 		conf.setAppName("ComplexObjectManipulation_RDD");
 
@@ -54,6 +56,9 @@ public class AggregatePartIDsFromCustomer_RDD {
 		conf.set("spark.kryoserializer.buffer.mb", "64");
 		conf.set("spark.kryo.registrationRequired", "true");
 		conf.set("spark.kryo.registrator", "edu.rice.dmodel.MyKryoRegistrator");
+		
+		conf.set("spark.local.dir", "/tmp/spark");
+		
 
 		sc = new JavaSparkContext(conf);
 
@@ -74,16 +79,30 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 		System.out.println("Cache the data");
 
-		customerRDD.cache();
-		// customerRDD.persist(StorageLevel.MEMORY_ONLY());
+//		customerRDD.cache();
+//		customerRDD.persist(StorageLevel.MEMORY_ONLY_2());
+
+//		customerRDD.persist(StorageLevel.MEMORY_AND_DISK());
+		customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
+		
+		
 
 		System.out.println("Get the number of Customers");
+
+		
 		// force spark to do the job and load data into RDD
-
 		long numberOfCustomers = customerRDD.count();
-		System.out.println("Number of Customer: " + numberOfCustomers);
+     	System.out.println("Number of Customer: " + numberOfCustomers);
+     	
+     	
+     	// do something else to have the data in memory 		
+     	long numberOfDistinctCustomers = customerRDD.distinct().count();
+     	System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
 
-//		// try to sleep for 5 seconds to be sure that all other tasks are done
+     	
+		
+		
+		// try to sleep for 5 seconds to be sure that all other tasks are done
 //		for (int i = 0; i < 5; i++) {
 //			try {
 //				Thread.sleep(1000);
@@ -171,13 +190,26 @@ public class AggregatePartIDsFromCustomer_RDD {
 				});
 
 		
-		long finalResultCount=result.count();
 
-		System.out.println("Final Result Count:" + finalResultCount);
+		// At the end we do not do a result.count() but we do a map and reduce task to count up the final results  
+		Tuple2<Integer, Integer> finalResult= result.mapToPair(word -> new Tuple2<>(0, 1)).reduce(new Function2<Tuple2<Integer, Integer>, Tuple2<Integer, Integer>,Tuple2<Integer, Integer>>(){
+			@Override
+			public Tuple2<Integer, Integer> call(Tuple2<Integer, Integer> arg0, Tuple2<Integer, Integer> arg1) throws Exception {
+				
+				Tuple2<Integer, Integer> sum=new Tuple2<Integer, Integer>(arg0._1, arg0._2+arg1._2 ); 
+				return sum ;
+			}
+			 
+		 }); 
+		
+		int finalResultCount=finalResult._2;
+		 
+		
+		// System.out.println("Final Result Count:" + finalResultCount);
 
 		// Stop the timer
 		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
 
-		System.out.println(fileScale+"#"+REPLICATION_FACTOR+"#"+numberOfCustomers + "#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
+		System.out.println(fileScale+"#"+REPLICATION_FACTOR+"#"+numberOfCustomers+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
 	}
 }
