@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiPredicate;
+import java.util.stream.Collectors;
 
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
@@ -17,7 +19,16 @@ import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.storage.StorageLevel;
 
+
+
+import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.spark.api.java.function.PairFunction;
+
 import scala.Tuple2;
+
+import com.google.common.collect.Iterables;
+
 import edu.rice.dmodel.Customer;
 import edu.rice.dmodel.LineItem;
 import edu.rice.dmodel.Order;
@@ -27,11 +38,15 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 	private static JavaSparkContext sc;
 
+	
+
+	
+	
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		long startTime = 0;
 		double elapsedTotalTime = 0;
-		int REPLICATION_FACTOR = 2;// number of Customers multiply X 2^REPLICATION_FACTOR
-		String fileScale = "0.2";
+		int REPLICATION_FACTOR = 0;// number of Customers multiply X 2^REPLICATION_FACTOR
+		String fileScale = "0.1";
 
 		if (args.length > 0)
 			REPLICATION_FACTOR = Integer.parseInt(args[0]);
@@ -47,7 +62,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 //		conf.set("spark.cores.max", "8");
 //		conf.set("spark.default.parallelism", "8");
 //		conf.set("spark.executor.cores", "8");
-		conf.setMaster("local[*]");
+//		conf.setMaster("local[*]");
 		
 		conf.setAppName("ComplexObjectManipulation_RDD");
 
@@ -68,25 +83,19 @@ public class AggregatePartIDsFromCustomer_RDD {
 		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale));
 		
 		
-//		customerRDD.saveAsObjectFile("file");
-//		JavaRDD<Customer> customerRDD = sc.objectFile(""); 
-		
-
 		// Copy the same data multiple times to make it big data
-		for (int i = 1; i < REPLICATION_FACTOR; i++) {
+		for (int i = 0; i < REPLICATION_FACTOR; i++) {
 			customerRDD = customerRDD.union(customerRDD);
 		}
 
-		System.out.println("Cache the data");
-
+		// Caching made the experiment slower 
+//		System.out.println("Cache the data");
 //		customerRDD.cache();
 //		customerRDD.persist(StorageLevel.MEMORY_ONLY_2());
 
 //		customerRDD.persist(StorageLevel.MEMORY_AND_DISK());
-		customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
+//		customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
 		
-		
-
 		System.out.println("Get the number of Customers");
 
 		
@@ -100,20 +109,6 @@ public class AggregatePartIDsFromCustomer_RDD {
      	System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
 
      	
-		
-		
-		// try to sleep for 5 seconds to be sure that all other tasks are done
-//		for (int i = 0; i < 5; i++) {
-//			try {
-//				Thread.sleep(1000);
-//				System.out.println("Sleep "+i+" sec ... ");
-//			} catch (InterruptedException e) {
-//				e.printStackTrace();
-//			}
-//		}
-//
-//		System.out.println("Data is ready to use. ");
-
 		// #############################################
 		// #############################################
 		// ######### MAIN Experiment #############
@@ -124,37 +119,43 @@ public class AggregatePartIDsFromCustomer_RDD {
 		// Start the timer
 		startTime = System.nanoTime();
 
-		JavaRDD<Tuple2<String, Tuple2<String, Integer>>> soldLineItems2 = customerRDD.flatMap(new FlatMapFunction<Customer, Tuple2<String, Tuple2<String, Integer>>>() {
-
-			private static final long serialVersionUID = -7539917700784174380L;
+		
+		// flatMap to pair <partKey, <CustomerName, PartID>>
+		JavaPairRDD<Integer, Tuple2<String, Integer>> soldPartIDs = customerRDD.flatMapToPair(
+				new PairFlatMapFunction<Customer, Integer, Tuple2<String, Integer>>(){
+			
+				private static final long serialVersionUID = -1932241861741271488L;
 
 			@Override
-			public Iterator<Tuple2<String, Tuple2<String, Integer>>> call(Customer customer) throws Exception {
+			public Iterator<Tuple2<Integer, Tuple2<String, Integer>>> call(Customer customer) throws Exception {
 				List<Order> orders = customer.getOrders();
-				List<Tuple2<String, Tuple2<String, Integer>>> returnList = new ArrayList<Tuple2<String, Tuple2<String, Integer>>>();
+				List<Tuple2<Integer, Tuple2<String, Integer>>> returnList = new ArrayList<Tuple2<Integer, Tuple2<String, Integer>>>();
+				
 				for (Order order : orders) {
 					List<LineItem> lineItems = order.getLineItems();
 					for (LineItem lineItem : lineItems) {
 						Tuple2<String, Integer> supplierPartID = new Tuple2<String, Integer>(customer.getName(), lineItem.getPart().getPartID());
-						returnList.add(new Tuple2<String, Tuple2<String, Integer>>(lineItem.getSupplier().getName(), supplierPartID));
+						returnList.add(new Tuple2<Integer, Tuple2<String, Integer>>(lineItem.getSupplier().getSupplierKey(), supplierPartID));
 					}
 				}
+				
+				
 				return returnList.iterator();
 			}
 		});
+		
+		
 
-		JavaPairRDD<String, Tuple2<String, Integer>> soldPartIDs = soldLineItems2.mapToPair(w -> new Tuple2<String, Tuple2<String, Integer>>(w._1, w._2));
+		
 
 		// Now, we need to aggregate the results
 		// aggregateByKey needs 3 parameters:
 		// 1. zero initializations,
 		// 2. a function to add data to a Map<String, List<Integer> object and
 		// 3. a function to merge two Map<String, List<Integer> objects.
-		JavaPairRDD<String, Map<String, List<Integer>>> result = soldPartIDs.aggregateByKey(new HashMap<String, List<Integer>>(),
+		JavaPairRDD<Integer, Map<String, List<Integer>>> result = soldPartIDs.aggregateByKey(new HashMap<String, List<Integer>>(),
 				new Function2<Map<String, List<Integer>>, Tuple2<String, Integer>, Map<String, List<Integer>>>() {
-					/**
-					 * 
-					 */
+	
 					private static final long serialVersionUID = -1688402472496211511L;
 
 					@Override
@@ -172,18 +173,25 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 					@Override
 					public Map<String, List<Integer>> call(Map<String, List<Integer>> suppData1, Map<String, List<Integer>> suppData2) throws Exception {
-						// merge the two HashMaps inside the SupplierData
-						Iterator<String> it=suppData2.keySet().iterator();
+//						// merge the two HashMaps inside the SupplierData
+//						Iterator<String> it=suppData2.keySet().iterator();
+//						
+//						while (it.hasNext()) {
+//							String key = it.next();
+//							if (suppData1.containsKey(key)) {
+//								List<Integer> tmpIDList=suppData1.get(key);
+//								// get the List and aggregate PartID to the existing list
+//								tmpIDList.addAll(suppData2.get(key));
+//								suppData1.put(key, tmpIDList);
+//							}
+//						}
 						
-						while (it.hasNext()) {
-							String key = it.next();
-							if (suppData1.containsKey(key)) {
-								List<Integer> tmpIDList=suppData1.get(key);
-								// get the List and aggregate PartID to the existing list
-								tmpIDList.addAll(suppData2.get(key));
-								suppData1.put(key, tmpIDList);
-							}
-						}
+						
+						suppData1.putAll(suppData2);
+
+						
+//						suppData2.forEach( (key, value) -> map3.merge(key, value,  (v1, v2) ->   )   ); 
+						
 						return suppData1;
 					}
 
@@ -193,6 +201,8 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 		// At the end we do not do a result.count() but we do a map and reduce task to count up the final results  
 		Tuple2<Integer, Integer> finalResult= result.mapToPair(word -> new Tuple2<>(0, 1)).reduce(new Function2<Tuple2<Integer, Integer>, Tuple2<Integer, Integer>,Tuple2<Integer, Integer>>(){
+			private static final long serialVersionUID = 2685491879841689408L;
+
 			@Override
 			public Tuple2<Integer, Integer> call(Tuple2<Integer, Integer> arg0, Tuple2<Integer, Integer> arg1) throws Exception {
 				
@@ -204,12 +214,11 @@ public class AggregatePartIDsFromCustomer_RDD {
 		
 		int finalResultCount=finalResult._2;
 		 
-		
-		// System.out.println("Final Result Count:" + finalResultCount);
-
 		// Stop the timer
 		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
 
+		// print out the final results
 		System.out.println(fileScale+"#"+REPLICATION_FACTOR+"#"+numberOfCustomers+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
+		
 	}
 }
