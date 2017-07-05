@@ -31,12 +31,13 @@ import com.google.common.collect.Iterables;
 
 import edu.rice.dmodel.Customer;
 import edu.rice.dmodel.LineItem;
+import edu.rice.dmodel.MyKryoRegistrator;
 import edu.rice.dmodel.Order;
 import edu.rice.generate_data.DataGenerator;
 
 public class AggregatePartIDsFromCustomer_RDD {
 
-	private static JavaSparkContext sc;
+	
 
 	
 
@@ -54,7 +55,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 		if (args.length > 1)
 			fileScale = args[1];
 
-		PropertyConfigurator.configure("log4j.properties");
+//		PropertyConfigurator.configure("log4j.properties");
 
 		SparkConf conf = new SparkConf();
 		
@@ -70,12 +71,11 @@ public class AggregatePartIDsFromCustomer_RDD {
 		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 		conf.set("spark.kryoserializer.buffer.mb", "64");
 		conf.set("spark.kryo.registrationRequired", "true");
-		conf.set("spark.kryo.registrator", "edu.rice.dmodel.MyKryoRegistrator");
+		conf.set("spark.kryo.registrator", MyKryoRegistrator.class.getName());
 		
 		conf.set("spark.local.dir", "/tmp/spark");
 		
-
-		sc = new JavaSparkContext(conf);
+		JavaSparkContext sc = new JavaSparkContext(conf);
 
 		if (args.length > 1)
 			fileScale = args[1];
