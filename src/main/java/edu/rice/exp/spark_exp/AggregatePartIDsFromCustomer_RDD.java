@@ -7,28 +7,16 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiPredicate;
-import java.util.stream.Collectors;
 
-import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.storage.StorageLevel;
 
-
-
-import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.PairFlatMapFunction;
-import org.apache.spark.api.java.function.PairFunction;
-
 import scala.Tuple2;
-
-import com.google.common.collect.Iterables;
-
 import edu.rice.dmodel.Customer;
 import edu.rice.dmodel.LineItem;
 import edu.rice.dmodel.MyKryoRegistrator;
@@ -40,14 +28,11 @@ public class AggregatePartIDsFromCustomer_RDD {
 	
 
 	
-
-	
-	
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		long startTime = 0;
 		double elapsedTotalTime = 0;
-		int REPLICATION_FACTOR = 0;// number of Customers multiply X 2^REPLICATION_FACTOR
-		String fileScale = "0.1";
+		int REPLICATION_FACTOR = 4;// number of Customers multiply X 2^REPLICATION_FACTOR
+		String fileScale = "0.2";
 
 		if (args.length > 0)
 			REPLICATION_FACTOR = Integer.parseInt(args[0]);
@@ -59,10 +44,10 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 		SparkConf conf = new SparkConf();
 		
-//		conf.set("spark.executor.memory", "15g");
-//		conf.set("spark.cores.max", "8");
-//		conf.set("spark.default.parallelism", "8");
-//		conf.set("spark.executor.cores", "8");
+		conf.set("spark.executor.memory", "32g");
+		conf.set("spark.cores.max", "40");
+		conf.set("spark.default.parallelism", "40");
+		conf.set("spark.executor.cores", "8");
 //		conf.setMaster("local[*]");
 		
 		conf.setAppName("ComplexObjectManipulation_RDD");
@@ -73,7 +58,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 		conf.set("spark.kryo.registrationRequired", "true");
 		conf.set("spark.kryo.registrator", MyKryoRegistrator.class.getName());
 		
-		conf.set("spark.local.dir", "/tmp/spark");
+//		conf.set("spark.local.dir", "/mnt/sparkdata");
 		
 		JavaSparkContext sc = new JavaSparkContext(conf);
 
@@ -96,9 +81,9 @@ public class AggregatePartIDsFromCustomer_RDD {
 //		customerRDD.persist(StorageLevel.MEMORY_AND_DISK());
 //		customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
 		
-		System.out.println("Get the number of Customers");
-
-		
+//		System.out.println("Get the number of Customers");
+//
+//		
 		// force spark to do the job and load data into RDD
 		long numberOfCustomers = customerRDD.count();
      	System.out.println("Number of Customer: " + numberOfCustomers);
@@ -108,6 +93,10 @@ public class AggregatePartIDsFromCustomer_RDD {
      	long numberOfDistinctCustomers = customerRDD.distinct().count();
      	System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
 
+     	
+     	
+//     	customerRDD.saveAsObjectFile("file:///mnt/spark/customer.rdd");
+     	
      	
 		// #############################################
 		// #############################################
@@ -218,7 +207,9 @@ public class AggregatePartIDsFromCustomer_RDD {
 		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
 
 		// print out the final results
-		System.out.println(fileScale+"#"+REPLICATION_FACTOR+"#"+numberOfCustomers+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
+		System.out.println(fileScale+"#"+REPLICATION_FACTOR+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
+//		System.out.println(fileScale+"#"+REPLICATION_FACTOR+"#"+numberOfCustomers+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
+		
 		
 	}
 }
