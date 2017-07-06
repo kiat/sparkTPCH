@@ -8,12 +8,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.spark.deploy.worker.Sleeper;
 import org.apache.spark.storage.StorageLevel;
 
 import scala.Tuple2;
@@ -44,10 +46,16 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 		SparkConf conf = new SparkConf();
 		
-		conf.set("spark.executor.memory", "32g");
-		conf.set("spark.cores.max", "40");
-//		conf.set("spark.default.parallelism", "40");
-		conf.set("spark.executor.cores", "8");
+		int numPartitions=8;
+//		conf.set("spark.executor.memory", "30g");
+//		conf.set("spark.cores.max", "8");
+//		conf.set("spark.default.parallelism", "8");
+		
+		// 4 workers
+//	    conf .set("spark.executor.instances", "8");
+	    // 5 cores on each workers
+//	    conf.set("spark.executor.cores", "8");
+	      
 //		conf.setMaster("local[*]");
 		
 		conf.setAppName("ComplexObjectManipulation_RDD");
@@ -65,7 +73,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 		if (args.length > 1)
 			fileScale = args[1];
 
-		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale));
+		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions );
 		
 		
 		// Copy the same data multiple times to make it big data
@@ -75,11 +83,12 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 		// Caching made the experiment slower 
 //		System.out.println("Cache the data");
-//		customerRDD.cache();
+		customerRDD=customerRDD.coalesce(numPartitions);
+		
 //		customerRDD.persist(StorageLevel.MEMORY_ONLY_2());
 
 //		customerRDD.persist(StorageLevel.MEMORY_AND_DISK());
-//		customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
+		customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
 		
 //		System.out.println("Get the number of Customers");
 //
@@ -96,7 +105,19 @@ public class AggregatePartIDsFromCustomer_RDD {
      	
      	
 //     	customerRDD.saveAsObjectFile("file:///mnt/spark/customer.rdd");
-     	
+
+		
+//		for (int i = 0; i < 20; i++) {
+//			try {
+//				System.out.println(i + " Sleeping for 1 second");
+//				Thread.sleep(1000);
+//			} catch (Exception e) {
+//				// TODO: handle exception
+//			}
+//			
+//		}
+		
+		
      	
 		// #############################################
 		// #############################################
