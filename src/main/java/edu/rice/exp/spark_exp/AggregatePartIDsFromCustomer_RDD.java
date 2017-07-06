@@ -46,7 +46,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 		
 		conf.set("spark.executor.memory", "32g");
 		conf.set("spark.cores.max", "40");
-		conf.set("spark.default.parallelism", "40");
+//		conf.set("spark.default.parallelism", "40");
 		conf.set("spark.executor.cores", "8");
 //		conf.setMaster("local[*]");
 		
