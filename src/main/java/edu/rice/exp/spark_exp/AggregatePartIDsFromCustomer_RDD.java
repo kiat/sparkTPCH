@@ -70,6 +70,11 @@ public class AggregatePartIDsFromCustomer_RDD {
 		conf.set("spark.kryo.registrationRequired", "true");
 		conf.set("spark.kryo.registrator", MyKryoRegistrator.class.getName());
 		
+		conf.set("spark.io.compression.codec", "lzf"); // snappy, lzf, lz4 
+//		conf.set("spark.speculation", "true"); 
+		
+		
+		
 //		conf.set("spark.local.dir", "/mnt/sparkdata");
 		
 		JavaSparkContext sc = new JavaSparkContext(conf);

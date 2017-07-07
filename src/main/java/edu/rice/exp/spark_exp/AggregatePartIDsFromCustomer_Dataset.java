@@ -61,6 +61,9 @@ public class AggregatePartIDsFromCustomer_Dataset {
 				.config("spark.kryo.registrationRequired", "true")
 				.config("spark.kryo.registrator", MyKryoRegistrator.class.getName())
 				.appName("ComplexObjectManipulation_Dataset")
+				.config("spark.io.compression.codec", "lzf") // snappy, lzf, lz4 - Default=snappy 
+//				.config("spark.speculation", "true")
+				
 				// just in case that you want to run this on localhost in stand-alone Spark mode
 //				.master("local[*]") 
 				.getOrCreate();
@@ -94,6 +97,7 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		
 		// force spark to do the job and load data into RDD
 		customerDS=customerDS.coalesce(numPartitions).cache();
+		customerDS=customerDS.repartition(numPartitions);
 		
 		long numberOfCustomers=customerDS.count();
 		System.out.println("Number of Customer: " + numberOfCustomers);
