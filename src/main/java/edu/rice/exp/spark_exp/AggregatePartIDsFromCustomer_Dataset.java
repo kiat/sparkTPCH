@@ -8,7 +8,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.api.java.function.ReduceFunction;
@@ -26,7 +25,6 @@ import scala.Tuple2;
 import edu.rice.dmodel.Customer;
 import edu.rice.dmodel.LineItem;
 import edu.rice.dmodel.SupplierData;
-import edu.rice.dmodel.Part;
 import edu.rice.dmodel.MyKryoRegistrator;
 import edu.rice.dmodel.Order;
 import edu.rice.generate_data.DataGenerator;
@@ -41,19 +39,16 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		double elapsedTotalTime = 1;
 		String fileScale = "0.2";
 
-		int REPLICATION_FACTOR=4;
+		int REPLICATION_FACTOR=8;
 		
 		// define the number of partitions
-		int numPartitions=10;
+		int numPartitions=4;
 		
 		if (args.length > 0)
 			REPLICATION_FACTOR = Integer.parseInt(args[0]);
 
 		if (args.length > 1)
 			fileScale = args[1];
-		
-		
-//		PropertyConfigurator.configure("log4j.properties");
 		
 		SparkSession spark = SparkSession.builder()
 				// Kryo Serialization
@@ -137,7 +132,6 @@ public class AggregatePartIDsFromCustomer_Dataset {
 				List<SupplierData> returnList = new ArrayList<SupplierData>();
 				
 				Map<String, List<Integer>> soldPartIDs = new HashMap<String, List<Integer>>();
-
 				
 				List<Order> orders = customer.getOrders();
 				for (Order order : orders) {
@@ -150,7 +144,7 @@ public class AggregatePartIDsFromCustomer_Dataset {
 						soldPartIDs.put(customer.getName(), partIDs);
 						SupplierData mySupplierData =new SupplierData();
 						
-						mySupplierData.setSupplierName(lineItem.getSupplier().getName());
+						mySupplierData.setSupplierKey(lineItem.getSupplier().getSupplierKey());
 						mySupplierData.setSoldPartIDs(soldPartIDs);
 						returnList.add(mySupplierData);
 						
@@ -161,27 +155,24 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		}, supplierData_encoder);
 		
 		
-		
-		
-		
 		// Now Group the SupplierData by customer name as Key
-		KeyValueGroupedDataset<String, SupplierData> grouped_supplierCustomerPartID_DS = customerNameLineItem.groupByKey(new MapFunction<SupplierData, String>() {
+		KeyValueGroupedDataset<Integer, SupplierData> grouped_supplierCustomerPartID_DS = customerNameLineItem.groupByKey(new MapFunction<SupplierData, Integer>() {
 
 			private static final long serialVersionUID = -2443168521619624534L;
 
 			@Override
-			public String call(SupplierData arg0) throws Exception {
+			public Integer call(SupplierData arg0) throws Exception {
 
-				return arg0.getSupplierName();
+				return arg0.getSupplierKey();
 			}
-		}, Encoders.STRING());
+		}, Encoders.INT());
 
 		
 
 		
 		
 		// Now we go into each row with its key and reduce the values
-		Dataset<Tuple2<String, SupplierData>> reduced_supplierCustomerPartID_DS = grouped_supplierCustomerPartID_DS.reduceGroups(new ReduceFunction<SupplierData>() {
+		Dataset<Tuple2<Integer, SupplierData>> reduced_supplierCustomerPartID_DS = grouped_supplierCustomerPartID_DS.reduceGroups(new ReduceFunction<SupplierData>() {
 
 			private static final long serialVersionUID = -6243848928318981991L;
 
@@ -198,28 +189,10 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		
 		long finalResultCount= reduced_supplierCustomerPartID_DS.count();
 		
-		
-//		 // Produce the final Result as a dataset of SupplierData Objects
-//		 Dataset<SupplierData> finalResults=reduced_supplierCustomerPartID_DS.map(new MapFunction<Tuple2<String, SupplierData>, SupplierData>() {
-//			private static final long serialVersionUID = 1092513431731531012L;
-//			@Override
-//			public SupplierData call(Tuple2<String, SupplierData> arg0) throws Exception {
-//				return arg0._2;
-//			}
-//		}, supplierData_encoder);
-//
-//		 
-//		 finalResults.show();
-//		 List<SupplierData> someResults= finalResults.takeAsList(1);
-//		 System.out.println(someResults);
-		
-//		 System.out.println(reduced_supplierCustomerPartID_DS.count());
 
 		// Stop the timer
 		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
 
-//		System.out.println(numberOfCustomers + "#" + String.format("%.9f", elapsedTotalTime));
-		
 		System.out.println("Dataset#"+fileScale+"#"+REPLICATION_FACTOR+"#"+numberOfCustomers+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
 
 	}
