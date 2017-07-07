@@ -77,8 +77,18 @@ public class MyKryoRegistrator implements KryoRegistrator, Serializable {
 		kryo.register(edu.rice.dmodel.LineItem.class);
 		kryo.register(edu.rice.dmodel.Customer.class);
 		
+		kryo.register(edu.rice.dmodel.SupplierData.class);
+
+		kryo.register(byte[][].class);
+
 
 		doRegistration(kryo, "scala.collection.mutable.WrappedArray$ofRef");
+		
+		doRegistration(kryo, "org.apache.spark.sql.catalyst.InternalRow");
+		doRegistration(kryo, "org.apache.spark.sql.catalyst.expressions.UnsafeRow");
+
+		
+		
 		// doRegistration(kryo,
 		// "org.systemsbiology.xtandem.scoring.VariableStatistics");
 		// doRegistration(kryo,
