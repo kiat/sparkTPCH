@@ -32,7 +32,12 @@ public class AggregatePartIDsFromCustomer_RDD {
 	
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		long startTime = 0;
+
 		double elapsedTotalTime = 0;
+		
+		// define the number of partitions
+		int numPartitions=8;
+
 		int REPLICATION_FACTOR = 4;// number of Customers multiply X 2^REPLICATION_FACTOR
 		String fileScale = "0.2";
 
@@ -46,7 +51,6 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 		SparkConf conf = new SparkConf();
 		
-		int numPartitions=8;
 //		conf.set("spark.executor.memory", "30g");
 //		conf.set("spark.cores.max", "8");
 //		conf.set("spark.default.parallelism", "8");
@@ -228,8 +232,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
 
 		// print out the final results
-		System.out.println(fileScale+"#"+REPLICATION_FACTOR+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
-//		System.out.println(fileScale+"#"+REPLICATION_FACTOR+"#"+numberOfCustomers+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
+		System.out.println("Dataset#"+fileScale+"#"+REPLICATION_FACTOR+"#"+numberOfCustomers+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
 		
 		
 	}

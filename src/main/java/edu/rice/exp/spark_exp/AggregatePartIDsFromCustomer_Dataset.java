@@ -17,6 +17,7 @@ import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.KeyValueGroupedDataset;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.storage.StorageLevel;
 
 import scala.Tuple2;
 
@@ -26,7 +27,6 @@ import edu.rice.dmodel.Customer;
 import edu.rice.dmodel.LineItem;
 import edu.rice.dmodel.SupplierData;
 import edu.rice.dmodel.Part;
-
 import edu.rice.dmodel.MyKryoRegistrator;
 import edu.rice.dmodel.Order;
 import edu.rice.generate_data.DataGenerator;
@@ -39,12 +39,15 @@ public class AggregatePartIDsFromCustomer_Dataset {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		long startTime = 0;
 		double elapsedTotalTime = 1;
-		String fileScale = "0.1";
+		String fileScale = "0.2";
 
-		int NUMBER_OF_COPIES=0;
+		int REPLICATION_FACTOR=4;
+		
+		// define the number of partitions
+		int numPartitions=44;
 		
 		if (args.length > 0)
-			NUMBER_OF_COPIES = Integer.parseInt(args[0]);
+			REPLICATION_FACTOR = Integer.parseInt(args[0]);
 
 		if (args.length > 1)
 			fileScale = args[1];
@@ -109,14 +112,20 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		// Copy the same data multiple times to make it big data
 		// Original number is 15K
 		// 2 copy means 15 X 2 =30 x 2 = 60
-		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
+		for (int i = 0; i < REPLICATION_FACTOR; i++) {
 			customerDS = customerDS.union(customerDS);
 		}
 
 		
 		
 //		// force spark to do the job and load data into RDD
-//		customerDS.cache();
+		
+		customerDS=customerDS.coalesce(numPartitions).cache();
+		
+		long numberOfCustomers=customerDS.count();
+		System.out.println("Number of Customer: " + numberOfCustomers);
+
+		
 //
 //
 //		// try to sleep for 5 seconds to be sure that all other tasks are done 
@@ -145,8 +154,6 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		// #############################################
 		// #############################################
 
-		long numberOfCustomers = customerDS.count();
-		System.out.println("Number of Customer: " + numberOfCustomers);
 
 		// Now is data loaded in RDD, ready for the experiment
 		// Start the timer
@@ -221,6 +228,8 @@ public class AggregatePartIDsFromCustomer_Dataset {
 
 		
 		
+		long finalResultCount= reduced_supplierCustomerPartID_DS.count();
+		
 		
 //		 // Produce the final Result as a dataset of SupplierData Objects
 //		 Dataset<SupplierData> finalResults=reduced_supplierCustomerPartID_DS.map(new MapFunction<Tuple2<String, SupplierData>, SupplierData>() {
@@ -236,11 +245,14 @@ public class AggregatePartIDsFromCustomer_Dataset {
 //		 List<SupplierData> someResults= finalResults.takeAsList(1);
 //		 System.out.println(someResults);
 		
-		 System.out.println(reduced_supplierCustomerPartID_DS.count());
+//		 System.out.println(reduced_supplierCustomerPartID_DS.count());
 
 		// Stop the timer
 		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
 
-		System.out.println(numberOfCustomers + "#" + String.format("%.9f", elapsedTotalTime));
+//		System.out.println(numberOfCustomers + "#" + String.format("%.9f", elapsedTotalTime));
+		
+		System.out.println("Dataset#"+fileScale+"#"+REPLICATION_FACTOR+"#"+numberOfCustomers+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
+
 	}
 }
