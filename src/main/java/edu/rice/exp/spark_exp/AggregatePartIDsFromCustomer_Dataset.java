@@ -44,7 +44,7 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		int REPLICATION_FACTOR=4;
 		
 		// define the number of partitions
-		int numPartitions=44;
+		int numPartitions=10;
 		
 		if (args.length > 0)
 			REPLICATION_FACTOR = Integer.parseInt(args[0]);
@@ -54,8 +54,6 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		
 		
 //		PropertyConfigurator.configure("log4j.properties");
-
-		
 		
 		SparkSession spark = SparkSession.builder()
 				// Kryo Serialization
@@ -85,29 +83,7 @@ public class AggregatePartIDsFromCustomer_Dataset {
 			fileScale = args[1];
 
 		List<Customer> customerData = DataGenerator.generateData(fileScale);
-
-//		List<Customer> customerData_tmp = new ArrayList<Customer>(5000);
-
-//		// for scale TPC-H 0.5 we have 75000 Customer Objects
-//		for (int i = 0; i < 5000; i++) {
-//			customerData_tmp.add(customerData.get(i));
-//		}
-
 		Dataset<Customer> customerDS = spark.createDataset(customerData, customerEncoder);
-
-//		for (int j = 5000; j < customerData.size(); j = j + 5000) {
-//			List<Customer> customerData_tmp1 = new ArrayList<Customer>(5000);
-//			
-//			for (int i = j; i < +5000; i++) {
-//				customerData_tmp1.add(customerData.get(i));
-//			}
-//			
-//			Dataset<Customer> customerDS_tmp = spark.createDataset(customerData_tmp, customerEncoder);
-//			
-//			customerDS = customerDS.union(customerDS_tmp);
-//		}
-
-		// customerDS.show();
 
 		// Copy the same data multiple times to make it big data
 		// Original number is 15K
@@ -117,34 +93,26 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		}
 
 		
-		
-//		// force spark to do the job and load data into RDD
-		
+		// force spark to do the job and load data into RDD
 		customerDS=customerDS.coalesce(numPartitions).cache();
 		
 		long numberOfCustomers=customerDS.count();
 		System.out.println("Number of Customer: " + numberOfCustomers);
 
 		
-//
-//
-//		// try to sleep for 5 seconds to be sure that all other tasks are done 
-//		for (int i = 0; i < 5; i++) {
-//			try {
-//				Thread.sleep(1000);
-//				System.out.println("Sleep for 1 sec ... ");
-//			} catch (InterruptedException e) {
-//				e.printStackTrace();
-//			}	
-//		}
-		
-		
-		
-		
+
+
+		// try to sleep for 5 seconds to be sure that all other tasks are done 
+		for (int i = 0; i < 5; i++) {
+			try {
+				Thread.sleep(1000);
+				System.out.println("Sleep for 1 sec ... ");
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}	
+		}
+
 		System.out.println("Data is ready to use. ");
-		
-		
-		
 		
 		// Now is the data generated and cached
 
