@@ -39,7 +39,7 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		double elapsedTotalTime = 1;
 		String fileScale = "0.2";
 
-		int REPLICATION_FACTOR=8;
+		int REPLICATION_FACTOR=4;
 		
 		// define the number of partitions
 		int numPartitions=4;
@@ -49,6 +49,10 @@ public class AggregatePartIDsFromCustomer_Dataset {
 
 		if (args.length > 1)
 			fileScale = args[1];
+		
+		if (args.length > 2)
+			numPartitions = Integer.parseInt(args[2]);
+		
 		
 		SparkSession spark = SparkSession.builder()
 				// Kryo Serialization
@@ -193,7 +197,7 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		// Stop the timer
 		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
 
-		System.out.println("Dataset#"+fileScale+"#"+REPLICATION_FACTOR+"#"+numberOfCustomers+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
+		System.out.println("Dataset#"+fileScale+"#"+REPLICATION_FACTOR+"#"+numPartitions+"#"+numberOfCustomers+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
 
 	}
 }

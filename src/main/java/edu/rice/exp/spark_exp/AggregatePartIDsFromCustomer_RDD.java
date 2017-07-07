@@ -232,8 +232,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
 
 		// print out the final results
-		System.out.println("Dataset#"+fileScale+"#"+REPLICATION_FACTOR+"#"+numberOfCustomers+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
-		
-		
+		System.out.println("Dataset#"+fileScale+"#"+REPLICATION_FACTOR+"#"+numPartitions+"#"+numberOfCustomers+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
+
 	}
 }
