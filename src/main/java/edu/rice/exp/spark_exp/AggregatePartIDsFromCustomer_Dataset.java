@@ -58,7 +58,7 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		SparkSession spark = SparkSession.builder()
 				// Kryo Serialization
 				.config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-				.config("spark.kryoserializer.buffer.mb", "64")
+				.config(" spark.kryoserializer.buffer", "64k")
 				.config("spark.kryo.registrationRequired", "true")
 				.config("spark.kryo.registrator", MyKryoRegistrator.class.getName())
 				.appName("ComplexObjectManipulation_Dataset")
