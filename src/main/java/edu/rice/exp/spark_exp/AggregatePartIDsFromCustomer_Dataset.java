@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.api.java.function.ReduceFunction;
@@ -39,13 +40,13 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		double elapsedTotalTime = 1;
 		String fileScale = "0.2";
 
-		int REPLICATION_FACTOR=4;
+		int NUMBER_OF_COPIES=4;
 		
 		// define the number of partitions
 		int numPartitions=4;
 		
 		if (args.length > 0)
-			REPLICATION_FACTOR = Integer.parseInt(args[0]);
+			NUMBER_OF_COPIES = Integer.parseInt(args[0]);
 
 		if (args.length > 1)
 			fileScale = args[1];
@@ -85,15 +86,16 @@ public class AggregatePartIDsFromCustomer_Dataset {
 			fileScale = args[1];
 
 		List<Customer> customerData = DataGenerator.generateData(fileScale);
-		Dataset<Customer> customerDS = spark.createDataset(customerData, customerEncoder);
+		Dataset<Customer> customerDS_raw = spark.createDataset(customerData, customerEncoder);
+
+
+		Dataset<Customer> customerDS  = customerDS_raw;
 
 		// Copy the same data multiple times to make it big data
-		// Original number is 15K
-		// 2 copy means 15 X 2 =30 x 2 = 60
-		for (int i = 0; i < REPLICATION_FACTOR; i++) {
-			customerDS = customerDS.union(customerDS);
+		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
+			customerDS = customerDS.union(customerDS_raw);
 		}
-
+		
 		
 		// force spark to do the job and load data into RDD
 		customerDS=customerDS.coalesce(numPartitions).cache();
@@ -187,7 +189,7 @@ public class AggregatePartIDsFromCustomer_Dataset {
 		// Stop the timer
 		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
 
-		System.out.println("Dataset#"+fileScale+"#"+REPLICATION_FACTOR+"#"+numPartitions+"#"+numberOfCustomers+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
+		System.out.println("Dataset#"+fileScale+"#"+NUMBER_OF_COPIES+"#"+numPartitions+"#"+numberOfCustomers+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
 
 	}
 }

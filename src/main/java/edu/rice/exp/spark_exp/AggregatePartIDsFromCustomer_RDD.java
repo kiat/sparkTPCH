@@ -36,14 +36,17 @@ public class AggregatePartIDsFromCustomer_RDD {
 		// define the number of partitions
 		int numPartitions=8;
 
-		int REPLICATION_FACTOR = 4;// number of Customers multiply X 2^REPLICATION_FACTOR
+		int NUMBER_OF_COPIES = 4;// number of Customers multiply X 2^REPLICATION_FACTOR
 		String fileScale = "0.2";
 
 		if (args.length > 0)
-			REPLICATION_FACTOR = Integer.parseInt(args[0]);
+			NUMBER_OF_COPIES = Integer.parseInt(args[0]);
 
 		if (args.length > 1)
 			fileScale = args[1];
+		
+		if (args.length > 2)
+			numPartitions = Integer.parseInt(args[2]);
 
 		SparkConf conf = new SparkConf();
 		conf.setAppName("ComplexObjectManipulation_RDD");
@@ -63,14 +66,16 @@ public class AggregatePartIDsFromCustomer_RDD {
 		if (args.length > 1)
 			fileScale = args[1];
 
-		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions );
-		
-		
-		// Copy the same data multiple times to make it big data
-		for (int i = 0; i < REPLICATION_FACTOR; i++) {
-			customerRDD = customerRDD.union(customerRDD);
-		}
+		JavaRDD<Customer> customerRDD_raw = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);
 
+		JavaRDD<Customer> customerRDD = customerRDD_raw;
+
+		// Copy the same data multiple times to make it big data
+		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
+			customerRDD = customerRDD.union(customerRDD_raw);
+		}
+		
+		
 		// Caching made the experiment slower 
 //		System.out.println("Cache the data");
 		customerRDD=customerRDD.coalesce(numPartitions);
@@ -199,7 +204,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
 
 		// print out the final results
-		System.out.println("Dataset#"+fileScale+"#"+REPLICATION_FACTOR+"#"+numPartitions+"#"+numberOfCustomers+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
+		System.out.println("Dataset#"+fileScale+"#"+NUMBER_OF_COPIES+"#"+numPartitions+"#"+numberOfCustomers+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
 
 	}
 }
