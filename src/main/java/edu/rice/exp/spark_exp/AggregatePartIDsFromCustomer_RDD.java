@@ -66,15 +66,20 @@ public class AggregatePartIDsFromCustomer_RDD {
 		if (args.length > 1)
 			fileScale = args[1];
 
-		JavaRDD<Customer> customerRDD_raw = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);
+		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);
 
-		JavaRDD<Customer> customerRDD = customerRDD_raw;
-
+//		JavaRDD<Customer> customerRDD = customerRDD_raw;
+//
+//		// Copy the same data multiple times to make it big data
+//		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
+//			customerRDD = customerRDD.union(customerRDD_raw);
+//		}
+		
+		
 		// Copy the same data multiple times to make it big data
 		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
-			customerRDD = customerRDD.union(customerRDD_raw);
+			customerRDD = customerRDD.union(customerRDD);
 		}
-		
 		
 		// Caching made the experiment slower 
 //		System.out.println("Cache the data");
