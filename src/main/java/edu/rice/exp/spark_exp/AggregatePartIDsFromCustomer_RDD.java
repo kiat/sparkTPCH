@@ -53,7 +53,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 		// Kryo Serialization
 		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
-		conf.set("spark.kryoserializer.buffer", "64k");
+		conf.set("spark.kryoserializer.buffer", "64000m");
 		conf.set("spark.kryo.registrationRequired", "true");
 		conf.set("spark.kryo.registrator", MyKryoRegistrator.class.getName());
 		
@@ -66,19 +66,13 @@ public class AggregatePartIDsFromCustomer_RDD {
 		if (args.length > 1)
 			fileScale = args[1];
 
-		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);
+		JavaRDD<Customer> customerRDD_raw = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);
 
-//		JavaRDD<Customer> customerRDD = customerRDD_raw;
-//
-//		// Copy the same data multiple times to make it big data
-//		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
-//			customerRDD = customerRDD.union(customerRDD_raw);
-//		}
-		
-		
+		JavaRDD<Customer> customerRDD = customerRDD_raw;
+
 		// Copy the same data multiple times to make it big data
 		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
-			customerRDD = customerRDD.union(customerRDD);
+			customerRDD = customerRDD.union(customerRDD_raw);
 		}
 		
 		// Caching made the experiment slower 
