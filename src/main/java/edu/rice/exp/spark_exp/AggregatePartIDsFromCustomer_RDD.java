@@ -29,6 +29,10 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 	
 	public static void main(String[] args) throws FileNotFoundException, IOException {
+
+		String hdfsNameNodePath = "hdfs://10.134.96.100:9000/user/kia/customer-";
+
+		
 		long startTime = 0;
 
 		double elapsedTotalTime = 0;
@@ -48,6 +52,10 @@ public class AggregatePartIDsFromCustomer_RDD {
 		if (args.length > 2)
 			numPartitions = Integer.parseInt(args[2]);
 
+		if (args.length > 3)
+			hdfsNameNodePath = args[3];
+		
+		
 		SparkConf conf = new SparkConf();
 		conf.setAppName("ComplexObjectManipulation_RDD");
 
@@ -65,18 +73,24 @@ public class AggregatePartIDsFromCustomer_RDD {
 		conf.set("spark.shuffle.spill", "true");
 		
 		JavaSparkContext sc = new JavaSparkContext(conf);
+		
+		
+		conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
+		conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
+		
+		conf.set("fs.local.block.size", "268435456");
 
-		if (args.length > 1)
-			fileScale = args[1];
-
-		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);
-
-//		JavaRDD<Customer> customerRDD = customerRDD_raw;
-
-		// Copy the same data multiple times to make it big data
-		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
-			customerRDD = customerRDD.union(customerRDD);
-		}
+		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES); 
+		
+		
+//		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);
+//
+////		JavaRDD<Customer> customerRDD = customerRDD_raw;
+//
+//		// Copy the same data multiple times to make it big data
+//		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
+//			customerRDD = customerRDD.union(customerRDD);
+//		}
 		
 		// Caching made the experiment slower 
 //		System.out.println("Cache the data");

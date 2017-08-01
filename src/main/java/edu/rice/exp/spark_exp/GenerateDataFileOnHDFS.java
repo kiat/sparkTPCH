@@ -1,25 +1,11 @@
 package edu.rice.exp.spark_exp;
 
-import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.net.URI;
-import java.net.URISyntaxException;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.util.Progressable;
-import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.deploy.SparkHadoopUtil;
-import org.apache.spark.storage.StorageLevel;
 
 import edu.rice.dmodel.Customer;
 import edu.rice.dmodel.MyKryoRegistrator;
@@ -29,7 +15,7 @@ public class GenerateDataFileOnHDFS {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
-		String hdfsNameNodePath = "hdfs://10.134.96.100:8080/user/kia/";
+		String hdfsNameNodePath = "hdfs://10.134.96.100:9000/user/kia/customer-";
 
 		// define the number of partitions
 		int numPartitions = 8;
@@ -66,7 +52,7 @@ public class GenerateDataFileOnHDFS {
 		JavaSparkContext sc = new JavaSparkContext(conf);
 
 		if (args.length > 2)
-			hdfsNameNodePath = args[1];
+			hdfsNameNodePath = args[2];
 
 		JavaRDD<Customer> customerRDD_raw = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);
 
@@ -77,68 +63,18 @@ public class GenerateDataFileOnHDFS {
 			customerRDD = customerRDD.union(customerRDD_raw);
 		}
 
-		// Caching made the experiment slower
-		// System.out.println("Cache the data");
-		customerRDD = customerRDD.coalesce(numPartitions);
-
-		// customerRDD.persist(StorageLevel.MEMORY_ONLY_2());
-
-		// customerRDD.persist(StorageLevel.MEMORY_AND_DISK());
-		// customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
-
-		// System.out.println("Get the number of Customers");
-		//
-		// force spark to do the job and load data into RDD
-		long numberOfCustomers = customerRDD.count();
-		System.out.println("Number of Customer: " + numberOfCustomers);
-		//
-		// // do something else to have the data in memory
-		// long numberOfDistinctCustomers = customerRDD.distinct().count();
-		// System.out.println("Number of Distinct Customer: " +
-		// numberOfDistinctCustomers);
-
-		//
-		// Configuration config = new Configuration();
-		// FileSystem fs = FileSystem.get(config);
-		//
-		// Path filenamePath = new Path("CUSTOMER.obj");
-		//
-		// if (fs.exists(filenamePath)) {
-		// fs.delete(filenamePath, true);
-		// }
-		//
-		// FSDataOutputStream fin = fs.create(filenamePath);
-		// fin.writeUTF("hello");
-		// fin.close();
-		//
-
-		// Configuration hadoopConfig =
-		// SparkHadoopUtil.get().newConfiguration(conf);
-		//
-		// hadoopConfig.set("fs.hdfs.impl",
-		// org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
-		// hadoopConfig.set("fs.file.impl",
-		// org.apache.hadoop.fs.LocalFileSystem.class.getName());
-		// hadoopConfig.set("fs.defaultFS", hdfsNameNodePath);
-
 		conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
 		conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
 		
 		conf.set("fs.local.block.size", "268435456");
 
-		customerRDD.saveAsObjectFile("hdfs://10.134.96.100:9000/user/kia/customer-" + NUMBER_OF_COPIES);
+		customerRDD.saveAsObjectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
 
 		
-		
-		
-		
-		
-		
-		
-		JavaRDD<Customer> customerRDD_new = sc.objectFile("hdfs://10.134.96.100:9000/user/kia/customer-" + NUMBER_OF_COPIES); 
-		
-		long numberOfCustomers_new = customerRDD_new.count();
-		System.out.println("Number of New Customer: " + numberOfCustomers_new);
+//		JavaRDD<Customer> customerRDD_new = sc.objectFile("hdfs://10.134.96.100:9000/user/kia/customer-" + NUMBER_OF_COPIES); 
+//		
+//		long numberOfCustomers_new = customerRDD_new.count();
+//		System.out.println("Number of New Customer: " + numberOfCustomers_new);
 		
 		
 		// FileSystem hdfs;
