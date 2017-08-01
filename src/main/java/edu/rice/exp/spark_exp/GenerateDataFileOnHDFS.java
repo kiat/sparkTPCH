@@ -76,8 +76,7 @@ public class GenerateDataFileOnHDFS {
 		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
 			customerRDD = customerRDD.union(customerRDD_raw);
 		}
-		
-		
+
 		// Caching made the experiment slower
 		// System.out.println("Cache the data");
 		customerRDD = customerRDD.coalesce(numPartitions);
@@ -85,13 +84,13 @@ public class GenerateDataFileOnHDFS {
 		// customerRDD.persist(StorageLevel.MEMORY_ONLY_2());
 
 		// customerRDD.persist(StorageLevel.MEMORY_AND_DISK());
-//		customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
+		// customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
 
 		// System.out.println("Get the number of Customers");
 		//
-		// // force spark to do the job and load data into RDD
-		// long numberOfCustomers = customerRDD.count();
-		// System.out.println("Number of Customer: " + numberOfCustomers);
+		// force spark to do the job and load data into RDD
+		long numberOfCustomers = customerRDD.count();
+		System.out.println("Number of Customer: " + numberOfCustomers);
 		//
 		// // do something else to have the data in memory
 		// long numberOfDistinctCustomers = customerRDD.distinct().count();
@@ -113,49 +112,50 @@ public class GenerateDataFileOnHDFS {
 		// fin.close();
 		//
 
-//		Configuration hadoopConfig = SparkHadoopUtil.get().newConfiguration(conf);
-//
-//		hadoopConfig.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
-//		hadoopConfig.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
-//		hadoopConfig.set("fs.defaultFS", hdfsNameNodePath);
+		// Configuration hadoopConfig =
+		// SparkHadoopUtil.get().newConfiguration(conf);
+		//
+		// hadoopConfig.set("fs.hdfs.impl",
+		// org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
+		// hadoopConfig.set("fs.file.impl",
+		// org.apache.hadoop.fs.LocalFileSystem.class.getName());
+		// hadoopConfig.set("fs.defaultFS", hdfsNameNodePath);
 
 		conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
 		conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
 
-		
-		customerRDD.saveAsObjectFile("hdfs://10.134.96.100:9000/user/kia/customer-"+NUMBER_OF_COPIES);
+		customerRDD.saveAsObjectFile("hdfs://10.134.96.100:9000/user/kia/customer-" + NUMBER_OF_COPIES);
 
-		
-		
-//		FileSystem hdfs;
-//		try {
-//			hdfs = FileSystem.get(new URI("hdfs://10.134.96.100:9000"), hadoopConfig);
-//
-//			Path file = new Path("hdfs://10.134.96.100:9000/user/kia/customer.obj");
-//
-//			if (hdfs.exists(file)) {
-//				hdfs.delete(file, true);
-//			}
-//			
-//
-//			
-//			//
-//			// OutputStream os = hdfs.create(file, new Progressable() {
-//			// public void progress() {
-//			// // out.println("...bytes written: [ "+bytesWritten+" ]");
-//			// }
-//			// });
-//			//
-//			// BufferedWriter br = new BufferedWriter(new OutputStreamWriter(os,
-//			// "UTF-8"));
-//			// br.write("Hello World");
-//			//
-//			hdfs.close();
-//
-//		} catch (URISyntaxException e) {
-//			e.printStackTrace();
-//		}
-
+		// FileSystem hdfs;
+		// try {
+		// hdfs = FileSystem.get(new URI("hdfs://10.134.96.100:9000"),
+		// hadoopConfig);
+		//
+		// Path file = new
+		// Path("hdfs://10.134.96.100:9000/user/kia/customer.obj");
+		//
+		// if (hdfs.exists(file)) {
+		// hdfs.delete(file, true);
+		// }
+		//
+		//
+		//
+		// //
+		// // OutputStream os = hdfs.create(file, new Progressable() {
+		// // public void progress() {
+		// // // out.println("...bytes written: [ "+bytesWritten+" ]");
+		// // }
+		// // });
+		// //
+		// // BufferedWriter br = new BufferedWriter(new OutputStreamWriter(os,
+		// // "UTF-8"));
+		// // br.write("Hello World");
+		// //
+		// hdfs.close();
+		//
+		// } catch (URISyntaxException e) {
+		// e.printStackTrace();
+		// }
 
 	}
 }
