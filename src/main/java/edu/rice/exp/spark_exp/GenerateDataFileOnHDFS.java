@@ -98,7 +98,7 @@ public class GenerateDataFileOnHDFS {
 				System.out.println("Saveing the dataset for " + i);
 				// coalesce the RDD based on number of partitions.
 				customerRDD = customerRDD.coalesce(numPartitions);
-				customerRDD.saveAsObjectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
+				customerRDD.saveAsObjectFile(hdfsNameNodePath + i);
 			}
 		}
 
