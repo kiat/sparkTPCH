@@ -123,7 +123,7 @@ public class GenerateDataFileOnHDFS {
 		conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
 
 		
-		customerRDD.saveAsObjectFile("hdfs://10.134.96.100:9000/user/kia/customer.obj");
+		customerRDD.saveAsObjectFile("hdfs://10.134.96.100:9000/user/kia/customer-"+NUMBER_OF_COPIES);
 
 		
 		
