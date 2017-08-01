@@ -123,9 +123,24 @@ public class GenerateDataFileOnHDFS {
 
 		conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
 		conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
+		
+		conf.set("fs.local.block.size", "268435456");
 
 		customerRDD.saveAsObjectFile("hdfs://10.134.96.100:9000/user/kia/customer-" + NUMBER_OF_COPIES);
 
+		
+		
+		
+		
+		
+		
+		
+		JavaRDD<Customer> customerRDD_new = sc.objectFile("hdfs://10.134.96.100:9000/user/kia/customer-" + NUMBER_OF_COPIES); 
+		
+		long numberOfCustomers_new = customerRDD_new.count();
+		System.out.println("Number of New Customer: " + numberOfCustomers_new);
+		
+		
 		// FileSystem hdfs;
 		// try {
 		// hdfs = FileSystem.get(new URI("hdfs://10.134.96.100:9000"),
