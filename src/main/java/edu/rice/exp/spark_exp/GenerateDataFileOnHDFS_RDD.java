@@ -17,7 +17,7 @@ import edu.rice.generate_data.DataGenerator;
 // spark-submit --master  spark://10.134.96.100:7077  --class edu.rice.exp.spark_exp.GenerateDataFileOnHDFS  --executor-cores 4  --executor-memory 4G  --driver-memory 10G ./target/spark-exp-0.0.1-SNAPSHOT-jar-with-dependencies.jar  "5,10,15,20"  0.2  10
 
 
-public class GenerateDataFileOnHDFS {
+public class GenerateDataFileOnHDFS_RDD {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
