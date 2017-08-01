@@ -29,11 +29,7 @@ public class GenerateDataFileOnHDFS {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
-		final String hdfsNameNodePath = "hdfs://quickstart.cloudera:8080/user";
-
-		long startTime = 0;
-
-		double elapsedTotalTime = 0;
+		String hdfsNameNodePath = "hdfs://10.134.96.100:8080/user/kia/";
 
 		// define the number of partitions
 		int numPartitions = 8;
@@ -69,8 +65,8 @@ public class GenerateDataFileOnHDFS {
 
 		JavaSparkContext sc = new JavaSparkContext(conf);
 
-		if (args.length > 1)
-			fileScale = args[1];
+		if (args.length > 2)
+			hdfsNameNodePath = args[1];
 
 		JavaRDD<Customer> customerRDD_raw = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);
 
@@ -83,12 +79,12 @@ public class GenerateDataFileOnHDFS {
 
 		// Caching made the experiment slower
 		// System.out.println("Cache the data");
-		customerRDD = customerRDD.coalesce(numPartitions);
+//		customerRDD = customerRDD.coalesce(numPartitions);
 
 		// customerRDD.persist(StorageLevel.MEMORY_ONLY_2());
 
 		// customerRDD.persist(StorageLevel.MEMORY_AND_DISK());
-		customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
+//		customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
 
 		// System.out.println("Get the number of Customers");
 		//
@@ -125,35 +121,39 @@ public class GenerateDataFileOnHDFS {
 		conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
 		conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
 
-		FileSystem hdfs;
-		try {
-			hdfs = FileSystem.get(new URI("hdfs://cslinux18.cs.rice.edu:9000"), hadoopConfig);
+		
+		customerRDD.saveAsObjectFile("hdfs://10.134.96.100:9000/user/kia/customer.obj");
 
-			Path file = new Path("hdfs://cslinux18.cs.rice.edu:9000/user/customer.obj");
-
-			if (hdfs.exists(file)) {
-				hdfs.delete(file, true);
-			}
-			
-			customerRDD.saveAsObjectFile("hdfs://cslinux18.cs.rice.edu:9000/user/customer.obj");
-
-			
-			//
-			// OutputStream os = hdfs.create(file, new Progressable() {
-			// public void progress() {
-			// // out.println("...bytes written: [ "+bytesWritten+" ]");
-			// }
-			// });
-			//
-			// BufferedWriter br = new BufferedWriter(new OutputStreamWriter(os,
-			// "UTF-8"));
-			// br.write("Hello World");
-			//
-			hdfs.close();
-
-		} catch (URISyntaxException e) {
-			e.printStackTrace();
-		}
+		
+		
+//		FileSystem hdfs;
+//		try {
+//			hdfs = FileSystem.get(new URI("hdfs://10.134.96.100:9000"), hadoopConfig);
+//
+//			Path file = new Path("hdfs://10.134.96.100:9000/user/kia/customer.obj");
+//
+//			if (hdfs.exists(file)) {
+//				hdfs.delete(file, true);
+//			}
+//			
+//
+//			
+//			//
+//			// OutputStream os = hdfs.create(file, new Progressable() {
+//			// public void progress() {
+//			// // out.println("...bytes written: [ "+bytesWritten+" ]");
+//			// }
+//			// });
+//			//
+//			// BufferedWriter br = new BufferedWriter(new OutputStreamWriter(os,
+//			// "UTF-8"));
+//			// br.write("Hello World");
+//			//
+//			hdfs.close();
+//
+//		} catch (URISyntaxException e) {
+//			e.printStackTrace();
+//		}
 
 
 	}
