@@ -76,7 +76,8 @@ public class GenerateDataFileOnHDFS {
 		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
 			customerRDD = customerRDD.union(customerRDD_raw);
 		}
-
+		
+		
 		// Caching made the experiment slower
 		// System.out.println("Cache the data");
 //		customerRDD = customerRDD.coalesce(numPartitions);
@@ -112,12 +113,12 @@ public class GenerateDataFileOnHDFS {
 		// fin.close();
 		//
 
-		Configuration hadoopConfig = SparkHadoopUtil.get().newConfiguration(conf);
+//		Configuration hadoopConfig = SparkHadoopUtil.get().newConfiguration(conf);
+//
+//		hadoopConfig.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
+//		hadoopConfig.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
+//		hadoopConfig.set("fs.defaultFS", hdfsNameNodePath);
 
-		hadoopConfig.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
-		hadoopConfig.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
-
-		hadoopConfig.set("fs.defaultFS", hdfsNameNodePath);
 		conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
 		conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
 
