@@ -80,7 +80,7 @@ public class GenerateDataFileOnHDFS {
 		
 		// Caching made the experiment slower
 		// System.out.println("Cache the data");
-//		customerRDD = customerRDD.coalesce(numPartitions);
+		customerRDD = customerRDD.coalesce(numPartitions);
 
 		// customerRDD.persist(StorageLevel.MEMORY_ONLY_2());
 
