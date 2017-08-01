@@ -64,7 +64,8 @@ public class AggregatePartIDsFromCustomer_Dataset {
 				.appName("ComplexObjectManipulation_Dataset")
 				.config("spark.io.compression.codec", "lzf") // snappy, lzf, lz4 - Default=snappy 
 //				.config("spark.speculation", "true")
-				
+				.config("spark.shuffle.spill", "true")
+
 				// just in case that you want to run this on localhost in stand-alone Spark mode
 //				.master("local[*]") 
 				.getOrCreate();

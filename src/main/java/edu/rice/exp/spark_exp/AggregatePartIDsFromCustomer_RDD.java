@@ -61,6 +61,9 @@ public class AggregatePartIDsFromCustomer_RDD {
 //		conf.set("spark.speculation", "true"); 
 //		conf.set("spark.local.dir", "/mnt/sparkdata");
 		
+		
+		conf.set("spark.shuffle.spill", "true");
+		
 		JavaSparkContext sc = new JavaSparkContext(conf);
 
 		if (args.length > 1)
