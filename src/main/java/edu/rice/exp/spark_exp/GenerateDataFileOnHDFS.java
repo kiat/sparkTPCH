@@ -30,6 +30,12 @@ public class GenerateDataFileOnHDFS {
 		if (args.length > 1)
 			fileScale = args[1];
 
+		if (args.length > 2)
+			numPartitions = Integer.parseInt(args[2]);
+		
+		if (args.length > 3)
+			hdfsNameNodePath = args[3];
+		
 		SparkConf conf = new SparkConf();
 
 		// PropertyConfigurator.configure("log4j.properties");
@@ -51,8 +57,7 @@ public class GenerateDataFileOnHDFS {
 
 		JavaSparkContext sc = new JavaSparkContext(conf);
 
-		if (args.length > 2)
-			hdfsNameNodePath = args[2];
+
 
 		JavaRDD<Customer> customerRDD_raw = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);
 
@@ -63,6 +68,13 @@ public class GenerateDataFileOnHDFS {
 			customerRDD = customerRDD.union(customerRDD_raw);
 		}
 
+		
+		
+		// coalesce the RDD based on number of partitions. 
+		customerRDD=customerRDD.coalesce(numPartitions);
+
+		
+		
 		conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
 		conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
 		
