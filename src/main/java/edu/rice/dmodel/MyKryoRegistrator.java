@@ -78,11 +78,16 @@ public class MyKryoRegistrator implements KryoRegistrator, Serializable {
 		kryo.register(edu.rice.dmodel.Customer.class);
 		
 		kryo.register(edu.rice.dmodel.SupplierData.class);
+		kryo.register(edu.rice.dmodel.PartIDCount.class);
 
 		kryo.register(byte[][].class);
 
 
 		doRegistration(kryo, "scala.collection.mutable.WrappedArray$ofRef");
+		doRegistration(kryo, "scala.math.LowPriorityOrderingImplicits$$anon$7");
+		doRegistration(kryo, "org.spark_project.guava.collect.NaturalOrdering");
+
+		//  java.lang.IllegalArgumentException: Class is not registered: scala.math.LowPriorityOrderingImplicits$$anon$7
 		
 		doRegistration(kryo, "org.apache.spark.sql.catalyst.InternalRow");
 		doRegistration(kryo, "org.apache.spark.sql.catalyst.expressions.UnsafeRow");
