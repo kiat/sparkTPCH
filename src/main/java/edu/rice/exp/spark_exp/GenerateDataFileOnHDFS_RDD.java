@@ -91,7 +91,8 @@ public class GenerateDataFileOnHDFS_RDD {
 		JavaRDD<Customer> customerRDD = customerRDD_raw;
 
 		// Copy the same data multiple times to make it big data
-		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
+		for (int i = 1; i < NUMBER_OF_COPIES; i++) {
+			customerRDD = customerRDD.union(customerRDD_raw);
 
 			if (numberOfCopies_set.contains(i)) {
 				System.out.println("Saving the dataset for " + i);
@@ -99,7 +100,6 @@ public class GenerateDataFileOnHDFS_RDD {
 				customerRDD = customerRDD.coalesce(numPartitions);
 				customerRDD.saveAsObjectFile(hdfsNameNodePath + i);
 			}
-			customerRDD = customerRDD.union(customerRDD_raw);
 		}
 
 		// JavaRDD<Customer> customerRDD_new =
