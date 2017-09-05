@@ -30,19 +30,23 @@ public class AggregatePartIDsFromCustomer_RDD {
 	
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
+		// can be overwritten by the fourth command line arg
 		String hdfsNameNodePath = "hdfs://10.134.96.100:9000/user/kia/customer-";
 
 		
-		long startTime = 0;			// timestamp from the beginning
-		long loadRDDTimestamp = 0;	// timestamp after loading RDD
-		long countTimestamp = 0;	// timestamp after count
-		long finalTimestamp = 0;	// timestamp after count		
-		double elapsedTotalTime = 0;	// total elapsed time
-		double queryTime = 0;			// time to run the query
-		double loadRDDTime = 0;		// time to load RDD in memory
+		long startTime = 0;					// timestamp from the beginning
+		long loadRDDTimestamp = 0;			// timestamp after loading RDD
+		long countTimestamp = 0;			// timestamp after count
+		long finalTimestamp = 0;			// timestamp final		
+
+		double loadRDDTime = 0;				// time to load RDD in memory
+		double queryTimeIncludesCount = 0;	// time from load RDD to count		
+		double queryTime = 0;				// time to run the query
+		double elapsedTotalTime = 0;		// total elapsed time		
 
 		
 		// define the number of partitions
+		// can be overwritten by the 3rd command line arg
 		int numPartitions=8;
 
 		int NUMBER_OF_COPIES = 4;// number of Customers multiply X 2^REPLICATION_FACTOR
@@ -62,7 +66,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 		
 		
 		SparkConf conf = new SparkConf();
-		conf.setAppName("ComplexObjectManipulation_RDD");
+		conf.setAppName("ComplexObjectManipulation_RDD " + NUMBER_OF_COPIES);
 
 		// Kryo Serialization
 		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
@@ -233,11 +237,12 @@ public class AggregatePartIDsFromCustomer_RDD {
 		
 		// Calculate elapsed times
 		loadRDDTime = (countTimestamp - loadRDDTimestamp) / 1000000000.0;
+		queryTimeIncludesCount = (finalTimestamp - loadRDDTimestamp) / 1000000000.0;
 		queryTime = (finalTimestamp - countTimestamp) / 1000000000.0;
 		elapsedTotalTime = (finalTimestamp - startTime) / 1000000000.0;
 		
 		// print out the final results
-		System.out.println("Result Query 1:\nDataset:"+fileScale+"\nNum Copies: "+NUMBER_OF_COPIES+"\nNum Part: "+numPartitions+"\nNum Cust: "+numberOfCustomers+"\nresult count: " +finalResultCount+"\nLoad RDD time: "+ String.format("%.9f", loadRDDTime)+"\nQuery time: "+ String.format("%.9f", queryTime)+"\nTotal time: "+ String.format("%.9f", elapsedTotalTime));
+		System.out.println("Result Query 1:\nDataset:"+fileScale+"\nNum Copies: "+NUMBER_OF_COPIES+"\nNum Part: "+numPartitions+"\nNum Cust: "+numberOfCustomers+"\nresult count: " +finalResultCount+"\nLoad RDD time: "+ String.format("%.9f", loadRDDTime)+"\nQuery time: "+ String.format("%.9f", queryTime)+"\nTotal time: "+"\nQuery time includes count: "+ String.format("%.9f", queryTimeIncludesCount)+"\nTotal time: "+ String.format("%.9f", elapsedTotalTime));
 
 	}
 }

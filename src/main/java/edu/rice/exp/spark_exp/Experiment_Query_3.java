@@ -56,7 +56,7 @@ public class Experiment_Query_3 {
 	
 	
 	SparkConf conf = new SparkConf();
-	conf.setAppName("ComplexObjectManipulation_RDD");
+	conf.setAppName("Query-3 " + NUMBER_OF_COPIES);
 
 	// Kryo Serialization
 	conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
