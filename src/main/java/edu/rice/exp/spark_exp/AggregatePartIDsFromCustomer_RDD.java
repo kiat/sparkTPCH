@@ -36,6 +36,9 @@ public class AggregatePartIDsFromCustomer_RDD {
 		long startTime = 0;
 
 		double elapsedTotalTime = 0;
+		double loadRDDTotalTime = 0;
+		double queryTime = 0;
+
 		
 		// define the number of partitions
 		int numPartitions=8;
@@ -100,6 +103,8 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 //		customerRDD.persist(StorageLevel.MEMORY_AND_DISK());
 		customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
+
+		loadRDDTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
 		
 		System.out.println("Get the number of Customers");
 
@@ -218,9 +223,9 @@ public class AggregatePartIDsFromCustomer_RDD {
 		 
 		// Stop the timer
 		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
-
+		queryTime = (System.nanoTime() - loadRDDTotalTime) / 1000000000.0;
 		// print out the final results
-		System.out.println("Dataset#"+fileScale+"#"+NUMBER_OF_COPIES+"#"+numPartitions+"#"+numberOfCustomers+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
+		System.out.println("Result Query 1:\nDataset:"+fileScale+"\nNum Copies: "+NUMBER_OF_COPIES+"\nNum Part: "+numPartitions+"\nNum Cust: "+numberOfCustomers+"\nresult count: " +finalResultCount+"\nLoad time: "+ String.format("%.9f", loadRDDTotalTime)+"\nQuery time: "+ String.format("%.9f", queryTime)+"\nTotal time: "+ String.format("%.9f", elapsedTotalTime));
 
 	}
 }
