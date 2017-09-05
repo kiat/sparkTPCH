@@ -38,14 +38,23 @@ public class Experiment_Query_4 {
 		// then it reduces - ("nation", count)
 		
 		
-	String hdfsNameNodePath = "hdfs://10.134.96.100:9000/user/kia/customer-";
+		// can be overwritten by the fourth command line arg
+		String hdfsNameNodePath = "hdfs://10.134.96.100:9000/user/kia/customer-";
 
 		
-		long startTime = 0;
+		long startTime = 0;					// timestamp from the beginning
+		long loadRDDTimestamp = 0;			// timestamp after loading RDD
+		long countTimestamp = 0;			// timestamp after count
+		long finalTimestamp = 0;			// timestamp final		
 
-		double elapsedTotalTime = 0;
+		double loadRDDTime = 0;				// time to load RDD in memory
+		double queryTimeIncludesCount = 0;	// time from load RDD to count		
+		double queryTime = 0;				// time to run the query
+		double elapsedTotalTime = 0;		// total elapsed time		
+
 		
 		// define the number of partitions
+		// can be overwritten by the 3rd command line arg
 		int numPartitions=8;
 
 		int NUMBER_OF_COPIES = 4;// number of Customers multiply X 2^REPLICATION_FACTOR
@@ -65,7 +74,7 @@ public class Experiment_Query_4 {
 		
 		
 		SparkConf conf = new SparkConf();
-		conf.setAppName("Query-4 " + NUMBER_OF_COPIES);
+		conf.setAppName("Query-4-" + NUMBER_OF_COPIES);
 
 		// Kryo Serialization
 		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
@@ -88,6 +97,10 @@ public class Experiment_Query_4 {
 		
 		conf.set("fs.local.block.size", "268435456");
 
+		// Get the initial time
+		startTime = System.nanoTime();
+		
+
 		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES); 
 		
 		
@@ -102,12 +115,17 @@ public class Experiment_Query_4 {
 		
 		// Caching made the experiment slower 
 //		System.out.println("Cache the data");
-		customerRDD=customerRDD.coalesce(numPartitions);
 		
 //		customerRDD.persist(StorageLevel.MEMORY_ONLY_2());
 
 //		customerRDD.persist(StorageLevel.MEMORY_AND_DISK());
 		customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
+
+		// Timestamp the load data step
+		loadRDDTimestamp = System.nanoTime();
+		
+		customerRDD=customerRDD.coalesce(numPartitions);
+
 		
 		System.out.println("Get the number of Customers");
 
@@ -124,13 +142,13 @@ public class Experiment_Query_4 {
      	
 		// #############################################
 		// #############################################
-		// #########      MAIN Experiment  #############
+		// ######### MAIN Experiment #############
 		// #############################################
 		// #############################################
 
 		// Now is data loaded in RDD, ready for the experiment
 		// Start the timer
-		startTime = System.nanoTime();
+     	countTimestamp = System.nanoTime();
 
 		
 		JavaPairRDD<Integer, Integer> counts=customerRDD.mapToPair(m_customer -> new Tuple2((Integer) m_customer.getNationkey(), 1));
@@ -151,10 +169,17 @@ public class Experiment_Query_4 {
 		long  finalResultCount=result.count();
 			
 		// Stop the timer
-		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
-
+		finalTimestamp = System.nanoTime();
+		
+		// Calculate elapsed times
+		loadRDDTime = (countTimestamp - loadRDDTimestamp) / 1000000000.0;
+		queryTimeIncludesCount = (finalTimestamp - loadRDDTimestamp) / 1000000000.0;
+		queryTime = (finalTimestamp - countTimestamp) / 1000000000.0;
+		elapsedTotalTime = (finalTimestamp - startTime) / 1000000000.0;
+		
 		// print out the final results
-		System.out.println("RDD#"+fileScale+"#"+NUMBER_OF_COPIES+"#"+numPartitions+"#"+numberOfCustomers+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
+		System.out.println("Result Query 4:\nDataset:"+fileScale+"\nNum Copies: "+NUMBER_OF_COPIES+"\nNum Part: "+numPartitions+"\nNum Cust: "+numberOfCustomers+"\nresult count: " +finalResultCount+"\nLoad RDD time: "+ String.format("%.9f", loadRDDTime)+"\nQuery time: "+ String.format("%.9f", queryTime)+"\nTotal time: "+"\nQuery time includes count: "+ String.format("%.9f", queryTimeIncludesCount)+"\nTotal time: "+ String.format("%.9f", elapsedTotalTime));
+//		System.out.println("RDD#"+fileScale+"#"+NUMBER_OF_COPIES+"#"+numPartitions+"#"+numberOfCustomers+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
 
 	}
 }

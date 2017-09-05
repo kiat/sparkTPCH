@@ -40,13 +40,23 @@ public class Experiment_Query_2 {
 		// 2. For each customer, loop through orders and get the list of linteitems
 		// 3. For each customer and orders, loop through Parts and sum
 
+		// can be overwritten by the fourth command line arg
 		String hdfsNameNodePath = "hdfs://10.134.96.100:9000/user/kia/customer-";
-		
-		long startTime = 0;
 
-		double elapsedTotalTime = 0;
+		
+		long startTime = 0;					// timestamp from the beginning
+		long loadRDDTimestamp = 0;			// timestamp after loading RDD
+		long countTimestamp = 0;			// timestamp after count
+		long finalTimestamp = 0;			// timestamp final		
+
+		double loadRDDTime = 0;				// time to load RDD in memory
+		double queryTimeIncludesCount = 0;	// time from load RDD to count		
+		double queryTime = 0;				// time to run the query
+		double elapsedTotalTime = 0;		// total elapsed time		
+
 		
 		// define the number of partitions
+		// can be overwritten by the 3rd command line arg
 		int numPartitions=8;
 
 		int NUMBER_OF_COPIES = 4;// number of Customers multiply X 2^REPLICATION_FACTOR
@@ -66,7 +76,7 @@ public class Experiment_Query_2 {
 		
 		
 		SparkConf conf = new SparkConf();
-		conf.setAppName("Query-2 " + NUMBER_OF_COPIES);
+		conf.setAppName("Query-2-" + NUMBER_OF_COPIES);
 
 		// Kryo Serialization
 		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
@@ -81,14 +91,6 @@ public class Experiment_Query_2 {
 		
 		conf.set("spark.shuffle.spill", "true");
 		
-		
-		// TODO: remove this line when it is running on Cluster mode
-		PropertyConfigurator.configure("log4j.properties");
-		// TODO: remove this line when it is running on Cluster mode
-		conf.setMaster("local[*]");
-//		conf.set("spark.executor.memory", "8g");
-
-		
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
 		
@@ -97,13 +99,17 @@ public class Experiment_Query_2 {
 		
 		conf.set("fs.local.block.size", "268435456");
 
+		// Get the initial time
+		startTime = System.nanoTime();
+		
+
 		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES); 
 		
 		
 //		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);
-	//
+//
 ////		JavaRDD<Customer> customerRDD = customerRDD_raw;
-	//
+//
 //		// Copy the same data multiple times to make it big data
 //		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
 //			customerRDD = customerRDD.union(customerRDD);
@@ -111,25 +117,31 @@ public class Experiment_Query_2 {
 		
 		// Caching made the experiment slower 
 //		System.out.println("Cache the data");
-		customerRDD=customerRDD.coalesce(numPartitions);
 		
 //		customerRDD.persist(StorageLevel.MEMORY_ONLY_2());
 
 //		customerRDD.persist(StorageLevel.MEMORY_AND_DISK());
 		customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
+
+		// Timestamp the load data step
+		loadRDDTimestamp = System.nanoTime();
+		
+		customerRDD=customerRDD.coalesce(numPartitions);
+
 		
 		System.out.println("Get the number of Customers");
 
 		// force spark to do the job and load data into RDD
 		long numberOfCustomers = customerRDD.count();
-	 	System.out.println("Number of Customer: " + numberOfCustomers);
-	 	
-	 	
-	 	// do something else to have the data in memory 		
-	 	long numberOfDistinctCustomers = customerRDD.distinct().count();
-	 	System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
-	 	
-	 	
+     	System.out.println("Number of Customer: " + numberOfCustomers);
+     	
+     	
+     	// do something else to have the data in memory 		
+     	long numberOfDistinctCustomers = customerRDD.distinct().count();
+     	System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
+
+     	
+     	
 		// #############################################
 		// #############################################
 		// ######### MAIN Experiment #############
@@ -138,7 +150,7 @@ public class Experiment_Query_2 {
 
 		// Now is data loaded in RDD, ready for the experiment
 		// Start the timer
-		startTime = System.nanoTime();
+     	countTimestamp = System.nanoTime();
 
 		JavaPairRDD<Integer, Integer> partIDandOne = customerRDD.flatMapToPair(new PairFlatMapFunction<Customer, Integer, Integer>() {
 
@@ -187,10 +199,17 @@ public class Experiment_Query_2 {
 
 
 		// Stop the timer
-		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
-
+		finalTimestamp = System.nanoTime();
+		
+		// Calculate elapsed times
+		loadRDDTime = (countTimestamp - loadRDDTimestamp) / 1000000000.0;
+		queryTimeIncludesCount = (finalTimestamp - loadRDDTimestamp) / 1000000000.0;
+		queryTime = (finalTimestamp - countTimestamp) / 1000000000.0;
+		elapsedTotalTime = (finalTimestamp - startTime) / 1000000000.0;
+		
 		// print out the final results
-		System.out.println("RDD-TOP10#"+fileScale+"#"+NUMBER_OF_COPIES+"#"+numPartitions+"#"+numberOfCustomers+"#" +finalResult.size()+"#"+ String.format("%.9f", elapsedTotalTime));
+		System.out.println("Result Query 1 Top-10:\nDataset:"+fileScale+"\nNum Copies: "+NUMBER_OF_COPIES+"\nNum Part: "+numPartitions+"\nNum Cust: "+numberOfCustomers+"\nresult count: " +finalResult+"\nLoad RDD time: "+ String.format("%.9f", loadRDDTime)+"\nQuery time: "+ String.format("%.9f", queryTime)+"\nTotal time: "+"\nQuery time includes count: "+ String.format("%.9f", queryTimeIncludesCount)+"\nTotal time: "+ String.format("%.9f", elapsedTotalTime));
+		//System.out.println("RDD-TOP10#"+fileScale+"#"+NUMBER_OF_COPIES+"#"+numPartitions+"#"+numberOfCustomers+"#" +finalResult.size()+"#"+ String.format("%.9f", elapsedTotalTime));
 
 	}
 }
