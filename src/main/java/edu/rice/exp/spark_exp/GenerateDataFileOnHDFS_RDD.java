@@ -65,7 +65,7 @@ public class GenerateDataFileOnHDFS_RDD {
 		// PropertyConfigurator.configure("log4j.properties");
 
 		// conf.set("spark.executor.memory", "32g");
-		conf.setMaster("local[*]");
+		//conf.setMaster("local[*]");
 
 		conf.setAppName("GenerateDataFileOnHDFS");
 
@@ -95,7 +95,7 @@ public class GenerateDataFileOnHDFS_RDD {
 			customerRDD = customerRDD.union(customerRDD_raw);
 
 			if (numberOfCopies_set.contains(i)) {
-				System.out.println("Saveing the dataset for " + i);
+				System.out.println("Saving the dataset for " + i);
 				// coalesce the RDD based on number of partitions.
 				customerRDD = customerRDD.coalesce(numPartitions);
 				customerRDD.saveAsObjectFile(hdfsNameNodePath + i);

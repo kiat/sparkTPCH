@@ -30,14 +30,23 @@ public class AggregatePartIDsFromCustomer_RDD {
 	
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
+		// can be overwritten by the fourth command line arg
 		String hdfsNameNodePath = "hdfs://10.134.96.100:9000/user/kia/customer-";
 
 		
-		long startTime = 0;
+		long startTime = 0;					// timestamp from the beginning
+		long loadRDDTimestamp = 0;			// timestamp after loading RDD
+		long countTimestamp = 0;			// timestamp after count
+		long finalTimestamp = 0;			// timestamp final		
 
-		double elapsedTotalTime = 0;
+		double loadRDDTime = 0;				// time to load RDD in memory
+		double queryTimeIncludesCount = 0;	// time from load RDD to count		
+		double queryTime = 0;				// time to run the query
+		double elapsedTotalTime = 0;		// total elapsed time		
+
 		
 		// define the number of partitions
+		// can be overwritten by the 3rd command line arg
 		int numPartitions=8;
 
 		int NUMBER_OF_COPIES = 4;// number of Customers multiply X 2^REPLICATION_FACTOR
@@ -57,7 +66,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 		
 		
 		SparkConf conf = new SparkConf();
-		conf.setAppName("ComplexObjectManipulation_RDD");
+		conf.setAppName("ComplexObjectManipulation_RDD " + NUMBER_OF_COPIES);
 
 		// Kryo Serialization
 		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
@@ -80,6 +89,10 @@ public class AggregatePartIDsFromCustomer_RDD {
 		
 		conf.set("fs.local.block.size", "268435456");
 
+		// Get the initial time
+		startTime = System.nanoTime();
+		
+
 		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES); 
 		
 		
@@ -100,6 +113,9 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 //		customerRDD.persist(StorageLevel.MEMORY_AND_DISK());
 		customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
+
+		// Timestamp the load data step
+		loadRDDTimestamp = System.nanoTime();
 		
 		System.out.println("Get the number of Customers");
 
@@ -122,7 +138,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 		// Now is data loaded in RDD, ready for the experiment
 		// Start the timer
-		startTime = System.nanoTime();
+     	countTimestamp = System.nanoTime();
 
 		
 		// flatMap to pair <partKey, <CustomerName, PartID>>
@@ -175,7 +191,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 				}, new Function2<Map<String, List<Integer>>, Map<String, List<Integer>>, Map<String, List<Integer>>>() {
 					private static final long serialVersionUID = -1503342516335901464L;
-
+ 
 					@Override
 					public Map<String, List<Integer>> call(Map<String, List<Integer>> suppData1, Map<String, List<Integer>> suppData2) throws Exception {
 //						// merge the two HashMaps inside the SupplierData
@@ -217,10 +233,16 @@ public class AggregatePartIDsFromCustomer_RDD {
 		int finalResultCount=finalResult._2;
 		 
 		// Stop the timer
-		elapsedTotalTime += (System.nanoTime() - startTime) / 1000000000.0;
-
+		finalTimestamp = System.nanoTime();
+		
+		// Calculate elapsed times
+		loadRDDTime = (countTimestamp - loadRDDTimestamp) / 1000000000.0;
+		queryTimeIncludesCount = (finalTimestamp - loadRDDTimestamp) / 1000000000.0;
+		queryTime = (finalTimestamp - countTimestamp) / 1000000000.0;
+		elapsedTotalTime = (finalTimestamp - startTime) / 1000000000.0;
+		
 		// print out the final results
-		System.out.println("Dataset#"+fileScale+"#"+NUMBER_OF_COPIES+"#"+numPartitions+"#"+numberOfCustomers+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
+		System.out.println("Result Query 1:\nDataset:"+fileScale+"\nNum Copies: "+NUMBER_OF_COPIES+"\nNum Part: "+numPartitions+"\nNum Cust: "+numberOfCustomers+"\nresult count: " +finalResultCount+"\nLoad RDD time: "+ String.format("%.9f", loadRDDTime)+"\nQuery time: "+ String.format("%.9f", queryTime)+"\nTotal time: "+"\nQuery time includes count: "+ String.format("%.9f", queryTimeIncludesCount)+"\nTotal time: "+ String.format("%.9f", elapsedTotalTime));
 
 	}
 }
