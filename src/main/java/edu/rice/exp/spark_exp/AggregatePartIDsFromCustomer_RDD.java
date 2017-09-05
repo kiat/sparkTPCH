@@ -33,12 +33,13 @@ public class AggregatePartIDsFromCustomer_RDD {
 		String hdfsNameNodePath = "hdfs://10.134.96.100:9000/user/kia/customer-";
 
 		
-		long startTime = 0;				// timestamp from the beginning
-		double loadRDDTimestamp = 0;	// timestamp after loading RDD
-		double countTimestamp = 0;		// timestamp after count
+		long startTime = 0;			// timestamp from the beginning
+		long loadRDDTimestamp = 0;	// timestamp after loading RDD
+		long countTimestamp = 0;	// timestamp after count
+		long finalTimestamp = 0;	// timestamp after count		
 		double elapsedTotalTime = 0;	// total elapsed time
 		double queryTime = 0;			// time to run the query
-		double loadRDDTime = 0;			// time to load RDD in memory
+		double loadRDDTime = 0;		// time to load RDD in memory
 
 		
 		// define the number of partitions
@@ -228,9 +229,12 @@ public class AggregatePartIDsFromCustomer_RDD {
 		int finalResultCount=finalResult._2;
 		 
 		// Stop the timer
-		elapsedTotalTime = (System.nanoTime() - startTime) / 1000000000.0;
+		finalTimestamp = System.nanoTime();
+		
+		// Calculate elapsed times
 		loadRDDTime = (countTimestamp - loadRDDTimestamp) / 1000000000.0;
-		queryTime = (elapsedTotalTime - countTimestamp) / 1000000000.0;
+		queryTime = (finalTimestamp - countTimestamp) / 1000000000.0;
+		elapsedTotalTime = (finalTimestamp - startTime) / 1000000000.0;
 		
 		// print out the final results
 		System.out.println("Result Query 1:\nDataset:"+fileScale+"\nNum Copies: "+NUMBER_OF_COPIES+"\nNum Part: "+numPartitions+"\nNum Cust: "+numberOfCustomers+"\nresult count: " +finalResultCount+"\nLoad RDD time: "+ String.format("%.9f", loadRDDTime)+"\nQuery time: "+ String.format("%.9f", queryTime)+"\nTotal time: "+ String.format("%.9f", elapsedTotalTime));
