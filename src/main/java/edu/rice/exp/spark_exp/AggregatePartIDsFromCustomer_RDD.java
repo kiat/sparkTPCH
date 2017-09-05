@@ -107,7 +107,6 @@ public class AggregatePartIDsFromCustomer_RDD {
 		
 		// Caching made the experiment slower 
 //		System.out.println("Cache the data");
-		customerRDD=customerRDD.coalesce(numPartitions);
 		
 //		customerRDD.persist(StorageLevel.MEMORY_ONLY_2());
 
@@ -116,6 +115,9 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 		// Timestamp the load data step
 		loadRDDTimestamp = System.nanoTime();
+		
+		customerRDD=customerRDD.coalesce(numPartitions);
+
 		
 		System.out.println("Get the number of Customers");
 
