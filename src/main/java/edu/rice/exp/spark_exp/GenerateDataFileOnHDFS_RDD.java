@@ -67,7 +67,7 @@ public class GenerateDataFileOnHDFS_RDD {
 		// conf.set("spark.executor.memory", "32g");
 		//conf.setMaster("local[*]");
 
-		conf.setAppName("GenerateDataFileOnHDFS");
+		conf.setAppName("GenerateDataFileOnHDFS-"+NUMBER_OF_COPIES);
 
 		// Kryo Serialization
 		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
