@@ -77,9 +77,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 		conf.set("spark.kryo.registrator", MyKryoRegistrator.class.getName());
 		
 		conf.set("spark.io.compression.codec", "lzf"); // snappy, lzf, lz4 
-//		conf.set("spark.speculation", "true"); 
-//		conf.set("spark.local.dir", "/mnt/sparkdata");
-		
+//		conf.set("spark.speculation", "true"); 		
 		
 		conf.set("spark.shuffle.spill", "true");
 		
@@ -96,16 +94,6 @@ public class AggregatePartIDsFromCustomer_RDD {
 		
 
 		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES); 
-		
-		
-//		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);
-//
-////		JavaRDD<Customer> customerRDD = customerRDD_raw;
-//
-//		// Copy the same data multiple times to make it big data
-//		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
-//			customerRDD = customerRDD.union(customerRDD);
-//		}
 		
 		// Caching made the experiment slower 
 //		System.out.println("Cache the data");
@@ -243,13 +231,17 @@ public class AggregatePartIDsFromCustomer_RDD {
 		finalTimestamp = System.nanoTime();
 		
 		// Calculate elapsed times
+		// time to load data from hdfs into RDD
 		loadRDDTime = (countTimestamp - loadRDDTimestamp) / 1000000000.0;
-		queryTimePlusDataLoad = (finalTimestamp - loadRDDTimestamp) / 1000000000.0;
+		// query time including loading RDD into memory
+		queryTimePlusDataLoad = (finalTimestamp - countTimestamp) / 1000000000.0;
+		// query time not including loading RDD into memory
 		queryTime = (finalTimestamp - startQueryTimestamp) / 1000000000.0;
+		// total elapsed time
 		elapsedTotalTime = (finalTimestamp - startTime) / 1000000000.0;
 		
 		// print out the final results
-		System.out.println("Result Query 1:\nDataset:"+fileScale+"\nNum Copies: "+NUMBER_OF_COPIES+"\nNum Part: "+numPartitions+"\nNum Cust: "+numberOfCustomers+"\nresult count: " +finalResultCount+"\nLoad RDD time: "+ String.format("%.9f", loadRDDTime)+"\nQuery time: "+ String.format("%.9f", queryTime)+"\nTotal time: "+"\nQuery time includes data load: "+ String.format("%.9f", queryTimePlusDataLoad)+"\nTotal time: "+ String.format("%.9f", elapsedTotalTime));
+		System.out.println("Result Query 1:\nDataset:"+fileScale+"\nNum Copies: "+NUMBER_OF_COPIES+"\nNum Part: "+numPartitions+"\nNum Cust: "+numberOfCustomers+"\nresult count: " +finalResultCount+"\nLoad RDD time: "+ String.format("%.9f", loadRDDTime)+"\nQuery time: "+ String.format("%.9f", queryTime)+"\nQuery time includes data load: "+ String.format("%.9f", queryTimePlusDataLoad)+"\nTotal time: "+ String.format("%.9f", elapsedTotalTime));
 
 	}
 }
