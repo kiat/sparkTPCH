@@ -94,7 +94,7 @@ public class GenerateDataFileOnHDFS_RDD {
 		for (int i = 1; i < NUMBER_OF_COPIES; i++) {
 			customerRDD = customerRDD.union(customerRDD_raw);
 
-			if (numberOfCopies_set.contains(i)) {
+			if (numberOfCopies_set.contains((i-1))) {
 				System.out.println("Saving the dataset for " + i);
 				// coalesce the RDD based on number of partitions.
 				customerRDD = customerRDD.coalesce(numPartitions);
