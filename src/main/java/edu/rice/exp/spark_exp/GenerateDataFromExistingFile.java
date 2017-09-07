@@ -66,11 +66,10 @@ public class GenerateDataFromExistingFile {
 
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
-		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + sourceFactor); 
-		
+		JavaRDD<Customer> customerRDD_raw = sc.objectFile(hdfsNameNodePath + sourceFactor); 
+				
+		JavaRDD<Customer> customerRDD=customerRDD_raw.coalesce(numPartitions);
 		customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
-		
-		customerRDD=customerRDD.coalesce(numPartitions);
 		
 		System.out.println("Get the number of Customers");
 
@@ -81,7 +80,7 @@ public class GenerateDataFromExistingFile {
 
 		// Copy the same data multiple times to make it big data
 		for (int i = 1; i < factorToCopy; i++) {
-			customerRDD = customerRDD.union(customerRDD);
+			customerRDD = customerRDD.union(customerRDD_raw);
 
 			System.out.println("Appending set-> " + i);
 			
