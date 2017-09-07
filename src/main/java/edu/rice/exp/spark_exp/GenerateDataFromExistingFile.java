@@ -24,14 +24,14 @@ public class GenerateDataFromExistingFile {
 		// define the number of partitions
 		int numPartitions = 8;
 
-		int NUMBER_OF_COPIES = 1; // each copy has 2.4 million costumers
+		int sourceFactor = 80; // each copy has 2.4 million costumers
 								  // since we are using the 80 factor file as source
 		
 		int factorToCopy = 2; 	  // how many times are we adding the original
 								  // dataset (by default = 2, we duplicate)
 		
 		if (args.length > 0)
-			 NUMBER_OF_COPIES = Integer.parseInt(args[0]);
+			sourceFactor = Integer.parseInt(args[0]);
 		
 		if (args.length > 1)
 			factorToCopy = Integer.parseInt(args[1]);
@@ -47,7 +47,7 @@ public class GenerateDataFromExistingFile {
 
 		// PropertyConfigurator.configure("log4j.properties");
 
-		conf.setAppName("GenerateDataFromExistingFile-"+(2*80));
+		conf.setAppName("GenerateDataFromExistingFile-"+(2*sourceFactor));
 
 		// Kryo Serialization
 		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
@@ -66,7 +66,7 @@ public class GenerateDataFromExistingFile {
 
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
-		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + "80"); 
+		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + sourceFactor); 
 		
 		customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
 		
@@ -80,12 +80,12 @@ public class GenerateDataFromExistingFile {
      	System.out.println("Number of Customer: " + numberOfCustomers);
 
 		// Copy the same data multiple times to make it big data
-		for (int i = 1; i < NUMBER_OF_COPIES; i++) {
+		for (int i = 1; i < factorToCopy; i++) {
 			customerRDD = customerRDD.union(customerRDD);
 
 			System.out.println("Appending set-> " + i);
 			
-			if (i == (NUMBER_OF_COPIES-1)) {
+			if (i == (factorToCopy-1)) {
 				System.out.println("Saving the dataset for " + i);
 				// coalesce the RDD based on number of partitions.				
 				customerRDD = customerRDD.coalesce(numPartitions);	
