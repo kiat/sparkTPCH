@@ -76,7 +76,7 @@ public class GenerateDataFromExistingFile {
 		// force spark to do the job and load data into RDD
 		long numberOfCustomers = customerRDD.count();
 		
-     	System.out.println("Number of Customer: " + numberOfCustomers);
+     	System.out.println("Number of Customers in Source RDD: " + numberOfCustomers);
 
 		// Copy the same data multiple times to make it big data
 		for (int i = 1; i < factorToCopy; i++) {
@@ -88,6 +88,11 @@ public class GenerateDataFromExistingFile {
 				System.out.println("Saving the dataset for " + i);
 				// coalesce the RDD based on number of partitions.				
 				customerRDD = customerRDD.coalesce(numPartitions);	
+				// force spark to do the job and load data into RDD
+				numberOfCustomers = customerRDD.count();
+				
+		     	System.out.println("Number of Customers in Final RDD: " + numberOfCustomers);
+				
 				customerRDD.saveAsObjectFile(hdfsNameNodePath + (factorToCopy*sourceFactor));
 			}
 		}
