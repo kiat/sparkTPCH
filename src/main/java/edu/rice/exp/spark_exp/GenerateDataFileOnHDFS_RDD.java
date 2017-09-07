@@ -91,21 +91,24 @@ public class GenerateDataFileOnHDFS_RDD {
 			customerRDD = customerRDD.union(customerRDD_raw);
 
 			System.out.println("Appending set-> " + i);
-			// Get current size of heap in bytes
-			long heapSize = Runtime.getRuntime().totalMemory(); 
-
-			// Get maximum size of heap in bytes. The heap cannot grow beyond this size.// Any attempt will result in an OutOfMemoryException.
-			long heapMaxSize = Runtime.getRuntime().maxMemory();
-
-			 // Get amount of free memory within the heap in bytes. This size will increase // after garbage collection and decrease as new objects are created.
-			long heapFreeSize = Runtime.getRuntime().freeMemory(); 
-			
-			System.out.println("Memory stats. Heap size: " + heapSize + " heap max size: "+ heapMaxSize + "heap free size: " + heapFreeSize);
 			
 			if (numberOfCopies_set.contains((i+1))) {
 				System.out.println("Saving the dataset for " + i);
 				// coalesce the RDD based on number of partitions.
+				// Get current size of heap in bytes
+				long heapSize = Runtime.getRuntime().totalMemory(); 
+
+				// Get maximum size of heap in bytes. The heap cannot grow beyond this size.// Any attempt will result in an OutOfMemoryException.
+				long heapMaxSize = Runtime.getRuntime().maxMemory();
+
+				 // Get amount of free memory within the heap in bytes. This size will increase // after garbage collection and decrease as new objects are created.
+				long heapFreeSize = Runtime.getRuntime().freeMemory(); 
+				
+				System.out.println("Memory stats. Heap size: " + heapSize + " heap max size: "+ heapMaxSize + "heap free size: " + heapFreeSize);
+				
 				customerRDD = customerRDD.coalesce(numPartitions);
+				System.out.println("Memory stats. Heap size: " + heapSize + " heap max size: "+ heapMaxSize + "heap free size: " + heapFreeSize);
+	
 				customerRDD.saveAsObjectFile(hdfsNameNodePath + (i+1));
 			}
 		}
