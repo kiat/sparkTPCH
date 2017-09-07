@@ -78,7 +78,6 @@ public class Experiment_Query_4 {
 
 		// Kryo Serialization
 		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
-		conf.set("spark.kryoserializer.buffer", "1024mb");
 		conf.set("spark.kryo.registrationRequired", "true");
 		conf.set("spark.kryo.registrator", MyKryoRegistrator.class.getName());
 		

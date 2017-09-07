@@ -64,14 +64,10 @@ public class GenerateDataFileOnHDFS_RDD {
 
 		// PropertyConfigurator.configure("log4j.properties");
 
-		// conf.set("spark.executor.memory", "32g");
-		//conf.setMaster("local[*]");
-
 		conf.setAppName("GenerateDataFileOnHDFS-"+NUMBER_OF_COPIES);
 
 		// Kryo Serialization
 		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
-		conf.set("spark.kryoserializer.buffer.mb", "64");
 		conf.set("spark.kryo.registrationRequired", "true");
 		conf.set("spark.kryo.registrator", MyKryoRegistrator.class.getName());
 
@@ -95,6 +91,16 @@ public class GenerateDataFileOnHDFS_RDD {
 			customerRDD = customerRDD.union(customerRDD_raw);
 
 			System.out.println("Appending set-> " + i);
+			// Get current size of heap in bytes
+			long heapSize = Runtime.getRuntime().totalMemory(); 
+
+			// Get maximum size of heap in bytes. The heap cannot grow beyond this size.// Any attempt will result in an OutOfMemoryException.
+			long heapMaxSize = Runtime.getRuntime().maxMemory();
+
+			 // Get amount of free memory within the heap in bytes. This size will increase // after garbage collection and decrease as new objects are created.
+			long heapFreeSize = Runtime.getRuntime().freeMemory(); 
+			
+			System.out.println("Memory stats. Heap size: " + heapSize + " heap max size: "+ heapMaxSize + "heap free size: " + heapFreeSize);
 			
 			if (numberOfCopies_set.contains((i+1))) {
 				System.out.println("Saving the dataset for " + i);

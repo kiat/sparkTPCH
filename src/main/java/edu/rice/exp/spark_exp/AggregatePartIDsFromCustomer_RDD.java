@@ -72,7 +72,6 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 		// Kryo Serialization
 		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
-		conf.set("spark.kryoserializer.buffer", "1024mb");
 		conf.set("spark.kryo.registrationRequired", "true");
 		conf.set("spark.kryo.registrator", MyKryoRegistrator.class.getName());
 		
