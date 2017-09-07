@@ -47,7 +47,7 @@ public class GenerateDataFromExistingFile {
 
 		// PropertyConfigurator.configure("log4j.properties");
 
-		conf.setAppName("GenerateDataFromExistingFile-"+(2*sourceFactor));
+		conf.setAppName("GenerateDataFromExistingFile-"+(factorToCopy*sourceFactor));
 
 		// Kryo Serialization
 		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
@@ -88,7 +88,7 @@ public class GenerateDataFromExistingFile {
 				System.out.println("Saving the dataset for " + i);
 				// coalesce the RDD based on number of partitions.				
 				customerRDD = customerRDD.coalesce(numPartitions);	
-				customerRDD.saveAsObjectFile(hdfsNameNodePath + ((i+1)*80));
+				customerRDD.saveAsObjectFile(hdfsNameNodePath + (factorToCopy*sourceFactor));
 			}
 		}
 
