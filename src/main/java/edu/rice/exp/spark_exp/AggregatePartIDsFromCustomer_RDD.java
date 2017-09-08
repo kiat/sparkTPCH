@@ -93,7 +93,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 		
 
 		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES); 
-		
+				
 		// Caching made the experiment slower 
 //		System.out.println("Cache the data");
 		
@@ -112,6 +112,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 		// force spark to do the job and load data into RDD
 		long numberOfCustomers = customerRDD.count();
+//		long numberOfCustomers = 0;
 		
      	countTimestamp = System.nanoTime();
 		
