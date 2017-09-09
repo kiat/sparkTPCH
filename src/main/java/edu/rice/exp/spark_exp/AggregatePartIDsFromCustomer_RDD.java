@@ -35,14 +35,13 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 		
 		long startTime = 0;					// timestamp from the beginning
-		long loadRDDTimestamp = 0;			// timestamp after loading RDD
 		long countTimestamp = 0;			// timestamp after count that reads
 											// from disk into RDD
 		long startQueryTimestamp = 0;		// timestamp before query begins
 		long finalTimestamp = 0;			// timestamp final		
 
-		double loadRDDTime = 0;				// time to load RDD in memory
-		double countTime = 0;				// time to count		
+		double loadRDDTime = 0;				// time to load RDD in memory (includes count + count.distinct)
+		double countTime = 0;				// time to count (includes only count)		
 		double queryTime = 0;				// time to run the query (doesn't include data load)
 		double elapsedTotalTime = 0;		// total elapsed time		
 
@@ -101,9 +100,6 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 //		customerRDD.persist(StorageLevel.MEMORY_AND_DISK());
 		customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
-
-		// Timestamp the load data step
-		loadRDDTimestamp = System.nanoTime();
 		
 		customerRDD=customerRDD.coalesce(numPartitions);
 
@@ -114,7 +110,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 		long numberOfCustomers = customerRDD.count();
 //		long numberOfCustomers = 0;
 		
-     	countTimestamp = System.nanoTime();
+		countTimestamp = System.nanoTime();
 		
      	System.out.println("Number of Customer: " + numberOfCustomers);
      	
@@ -122,8 +118,6 @@ public class AggregatePartIDsFromCustomer_RDD {
 //     	// do something else to have the data in memory 		
      	long numberOfDistinctCustomers = customerRDD.distinct().count();
      	System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
-
-     	
      	
 		// #############################################
 		// #############################################
@@ -234,14 +228,14 @@ public class AggregatePartIDsFromCustomer_RDD {
 		// time to load data from hdfs into RDD
 		loadRDDTime = (startQueryTimestamp - startTime) / 1000000000.0;
 		// query time including loading RDD into memory
-		countTime = (finalTimestamp - countTimestamp) / 1000000000.0;
+		countTime = (startQueryTimestamp - countTimestamp) / 1000000000.0;
 		// query time not including loading RDD into memory
 		queryTime = (finalTimestamp - startQueryTimestamp) / 1000000000.0;
 		// total elapsed time
 		elapsedTotalTime = (finalTimestamp - startTime) / 1000000000.0;
 		
 		// print out the final results
-		System.out.println("Result Query 1:\nDataset:"+fileScale+"\nNum Copies: "+NUMBER_OF_COPIES+"\nNum Part: "+numPartitions+"\nNum Cust: "+numberOfCustomers+"\nresult count: " +finalResultCount+"\nLoad RDD time: "+ String.format("%.9f", loadRDDTime)+"\nQuery time: "+ String.format("%.9f", queryTime)+"\nTime to count: "+ String.format("%.9f", countTime)+"\nTotal time: "+ String.format("%.9f", elapsedTotalTime));
+		System.out.println("Result Query 1:\nDataset:"+fileScale+"\nNum Copies: "+NUMBER_OF_COPIES+"\nNum Part: "+numPartitions+"\nNum Cust: "+numberOfCustomers+"\nresult count: " +finalResultCount+"\nLoad RDD time: "+ String.format("%.9f", loadRDDTime)+"\nTime to count: "+ String.format("%.9f", countTime)+"\nQuery time: "+ String.format("%.9f", queryTime)+"\nTotal time: "+ String.format("%.9f", elapsedTotalTime));
 
 	}
 }
