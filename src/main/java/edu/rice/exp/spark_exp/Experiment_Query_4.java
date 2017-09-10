@@ -43,13 +43,14 @@ public class Experiment_Query_4 {
 
 		
 		long startTime = 0;					// timestamp from the beginning
-		long loadRDDTimestamp = 0;			// timestamp after loading RDD
-		long countTimestamp = 0;			// timestamp after count
+		long countTimestamp = 0;			// timestamp after count that reads
+											// from disk into RDD
+		long startQueryTimestamp = 0;		// timestamp before query begins
 		long finalTimestamp = 0;			// timestamp final		
 
-		double loadRDDTime = 0;				// time to load RDD in memory
-		double queryTimeIncludesCount = 0;	// time from load RDD to count		
-		double queryTime = 0;				// time to run the query
+		double loadRDDTime = 0;				// time to load RDD in memory (includes count + count.distinct)
+		double countTime = 0;				// time to count (includes only count)		
+		double queryTime = 0;				// time to run the query (doesn't include data load)
 		double elapsedTotalTime = 0;		// total elapsed time		
 
 		
@@ -82,10 +83,7 @@ public class Experiment_Query_4 {
 		conf.set("spark.kryo.registrator", MyKryoRegistrator.class.getName());
 		
 		conf.set("spark.io.compression.codec", "lzf"); // snappy, lzf, lz4 
-//		conf.set("spark.speculation", "true"); 
-//		conf.set("spark.local.dir", "/mnt/sparkdata");
-		
-		
+
 		conf.set("spark.shuffle.spill", "true");
 		
 		JavaSparkContext sc = new JavaSparkContext(conf);
@@ -101,28 +99,9 @@ public class Experiment_Query_4 {
 		
 
 		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES); 
-		
-		
-//		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);
-//
-////		JavaRDD<Customer> customerRDD = customerRDD_raw;
-//
-//		// Copy the same data multiple times to make it big data
-//		for (int i = 0; i < NUMBER_OF_COPIES; i++) {
-//			customerRDD = customerRDD.union(customerRDD);
-//		}
-		
-		// Caching made the experiment slower 
-//		System.out.println("Cache the data");
-		
-//		customerRDD.persist(StorageLevel.MEMORY_ONLY_2());
-
-//		customerRDD.persist(StorageLevel.MEMORY_AND_DISK());
+				
 		customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
 
-		// Timestamp the load data step
-		loadRDDTimestamp = System.nanoTime();
-		
 		customerRDD=customerRDD.coalesce(numPartitions);
 
 		
@@ -130,6 +109,9 @@ public class Experiment_Query_4 {
 
 		// force spark to do the job and load data into RDD
 		long numberOfCustomers = customerRDD.count();
+		
+		countTimestamp = System.nanoTime();
+		
      	System.out.println("Number of Customer: " + numberOfCustomers);
      	
      	
@@ -147,7 +129,7 @@ public class Experiment_Query_4 {
 
 		// Now is data loaded in RDD, ready for the experiment
 		// Start the timer
-     	countTimestamp = System.nanoTime();
+     	startQueryTimestamp = System.nanoTime();
 
 		
 		JavaPairRDD<Integer, Integer> counts=customerRDD.mapToPair(m_customer -> new Tuple2((Integer) m_customer.getNationkey(), 1));
@@ -171,14 +153,17 @@ public class Experiment_Query_4 {
 		finalTimestamp = System.nanoTime();
 		
 		// Calculate elapsed times
-		loadRDDTime = (countTimestamp - loadRDDTimestamp) / 1000000000.0;
-		queryTimeIncludesCount = (finalTimestamp - loadRDDTimestamp) / 1000000000.0;
-		queryTime = (finalTimestamp - countTimestamp) / 1000000000.0;
+		// time to load data from hdfs into RDD
+		loadRDDTime = (startQueryTimestamp - startTime) / 1000000000.0;
+		// query time including loading RDD into memory
+		countTime = (startQueryTimestamp - countTimestamp) / 1000000000.0;
+		// query time not including loading RDD into memory
+		queryTime = (finalTimestamp - startQueryTimestamp) / 1000000000.0;
+		// total elapsed time
 		elapsedTotalTime = (finalTimestamp - startTime) / 1000000000.0;
 		
 		// print out the final results
-		System.out.println("Result Query 4:\nDataset:"+fileScale+"\nNum Copies: "+NUMBER_OF_COPIES+"\nNum Part: "+numPartitions+"\nNum Cust: "+numberOfCustomers+"\nresult count: " +finalResultCount+"\nLoad RDD time: "+ String.format("%.9f", loadRDDTime)+"\nQuery time: "+ String.format("%.9f", queryTime)+"\nTotal time: "+"\nQuery time includes count: "+ String.format("%.9f", queryTimeIncludesCount)+"\nTotal time: "+ String.format("%.9f", elapsedTotalTime));
-//		System.out.println("RDD#"+fileScale+"#"+NUMBER_OF_COPIES+"#"+numPartitions+"#"+numberOfCustomers+"#" +finalResultCount+"#"+ String.format("%.9f", elapsedTotalTime));
+		System.out.println("Result Query 4:\nDataset Factor: "+NUMBER_OF_COPIES+"\nNum Part: "+numPartitions+"\nNum Cust: "+numberOfCustomers+"\nResult count: " +finalResultCount+"\nLoad RDD time: "+ String.format("%.9f", loadRDDTime)+"\nTime to count: "+ String.format("%.9f", countTime)+"\nQuery time: "+ String.format("%.9f", queryTime)+"\nTotal time: "+ String.format("%.9f", elapsedTotalTime));
 
 	}
 }

@@ -108,14 +108,12 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 		// force spark to do the job and load data into RDD
 		long numberOfCustomers = customerRDD.count();
-//		long numberOfCustomers = 0;
 		
 		countTimestamp = System.nanoTime();
 		
      	System.out.println("Number of Customer: " + numberOfCustomers);
-     	
-     	
-//     	// do something else to have the data in memory 		
+     	     	
+     	// do something else to have the data in memory 		
      	long numberOfDistinctCustomers = customerRDD.distinct().count();
      	System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
      	
@@ -235,7 +233,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 		elapsedTotalTime = (finalTimestamp - startTime) / 1000000000.0;
 		
 		// print out the final results
-		System.out.println("Result Query 1:\nDataset:"+fileScale+"\nNum Copies: "+NUMBER_OF_COPIES+"\nNum Part: "+numPartitions+"\nNum Cust: "+numberOfCustomers+"\nresult count: " +finalResultCount+"\nLoad RDD time: "+ String.format("%.9f", loadRDDTime)+"\nTime to count: "+ String.format("%.9f", countTime)+"\nQuery time: "+ String.format("%.9f", queryTime)+"\nTotal time: "+ String.format("%.9f", elapsedTotalTime));
+		System.out.println("Result Query 1:\nDataset Factor: "+NUMBER_OF_COPIES+"\nNum Part: "+numPartitions+"\nNum Cust: "+numberOfCustomers+"\nResult count: " +finalResultCount+"\nLoad RDD time: "+ String.format("%.9f", loadRDDTime)+"\nTime to count: "+ String.format("%.9f", countTime)+"\nQuery time: "+ String.format("%.9f", queryTime)+"\nTotal time: "+ String.format("%.9f", elapsedTotalTime));
 
 	}
 }
