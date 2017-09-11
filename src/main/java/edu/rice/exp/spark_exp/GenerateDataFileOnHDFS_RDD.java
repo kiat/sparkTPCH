@@ -29,7 +29,15 @@ public class GenerateDataFileOnHDFS_RDD {
 		int NUMBER_OF_COPIES = 1;// number of Customers multiply X
 									// 2^REPLICATION_FACTOR
 		String fileScale = "0.2";
+		
+		// 1=serialize Data, 0=don't serialize data
+		// by default it serializes data
+		int serializeData = 1;		
 
+		// 1=compress Data, 0=don't compress data
+		// by default it compresses data		
+		int compressData = 1;		
+		
 		// if (args.length > 0)
 		// NUMBER_OF_COPIES = Integer.parseInt(args[0]);
 
@@ -60,21 +68,29 @@ public class GenerateDataFileOnHDFS_RDD {
 		if (args.length > 3)
 			hdfsNameNodePath = args[3];
 
+		if (args.length > 4)
+			serializeData = Integer.parseInt(args[4]);
+
+		if (args.length > 5)
+			compressData = Integer.parseInt(args[5]);
+		
 		SparkConf conf = new SparkConf();
 
 		// PropertyConfigurator.configure("log4j.properties");
 
 		conf.setAppName("GenerateDataFileOnHDFS-"+NUMBER_OF_COPIES);
 
-		// Kryo Serialization
-		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
-		conf.set("spark.kryo.registrationRequired", "true");
-		conf.set("spark.kryo.registrator", MyKryoRegistrator.class.getName());
-
-		conf.set("spark.io.compression.codec", "lzf"); // snappy, lzf, lz4
-		// conf.set("spark.speculation", "true");
-		// conf.set("spark.local.dir", "/mnt/sparkdata");
-
+		String filePrefix = "";
+		if (serializeData == 1 && compressData == 1) {			
+			// Kryo Serialization
+			conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
+			conf.set("spark.kryo.registrationRequired", "true");
+			conf.set("spark.kryo.registrator", MyKryoRegistrator.class.getName());
+			conf.set("spark.io.compression.codec", "lzf"); // snappy, lzf, lz4			
+		} else {			
+			hdfsNameNodePath = "hdfs://10.134.96.100:9000/user/kia/no-compress-no-serial/customer-";				
+		}
+		
 		// hadoop configurations
 		conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
 		conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
@@ -99,45 +115,6 @@ public class GenerateDataFileOnHDFS_RDD {
 				customerRDD.saveAsObjectFile(hdfsNameNodePath + (i+1));
 			}
 		}
-
-		// JavaRDD<Customer> customerRDD_new =
-		// sc.objectFile("hdfs://10.134.96.100:9000/user/kia/customer-" +
-		// NUMBER_OF_COPIES);
-		//
-		// long numberOfCustomers_new = customerRDD_new.count();
-		// System.out.println("Number of New Customer: " +
-		// numberOfCustomers_new);
-
-		// FileSystem hdfs;
-		// try {
-		// hdfs = FileSystem.get(new URI("hdfs://10.134.96.100:9000"),
-		// hadoopConfig);
-		//
-		// Path file = new
-		// Path("hdfs://10.134.96.100:9000/user/kia/customer.obj");
-		//
-		// if (hdfs.exists(file)) {
-		// hdfs.delete(file, true);
-		// }
-		//
-		//
-		//
-		// //
-		// // OutputStream os = hdfs.create(file, new Progressable() {
-		// // public void progress() {
-		// // // out.println("...bytes written: [ "+bytesWritten+" ]");
-		// // }
-		// // });
-		// //
-		// // BufferedWriter br = new BufferedWriter(new OutputStreamWriter(os,
-		// // "UTF-8"));
-		// // br.write("Hello World");
-		// //
-		// hdfs.close();
-		//
-		// } catch (URISyntaxException e) {
-		// e.printStackTrace();
-		// }
 
 	}
 }
