@@ -51,7 +51,15 @@ public class AggregatePartIDsFromCustomer_RDD {
 		int numPartitions=8;
 
 		int NUMBER_OF_COPIES = 4;// number of Customers multiply X 2^REPLICATION_FACTOR
+		
+		// TODO this is not used and should be removed
 		String fileScale = "0.2";
+		
+		// can be overwritten by the 4rd command line arg
+		// 0 = the query time doesn't include count nor count.distinct 
+		//     (thus calculated time includes reading from HDFS)
+		// 1 = the query includes count and count.distinct (default)
+		int queryIncludesHDFSTime=1;		
 
 		if (args.length > 0)
 			NUMBER_OF_COPIES = Integer.parseInt(args[0]);
@@ -64,7 +72,12 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 		if (args.length > 3)
 			hdfsNameNodePath = args[3];
+
+		if (args.length > 4)
+			queryIncludesHDFSTime =  Integer.parseInt(args[4]);		
 		
+		long numberOfCustomers = 0;
+		long numberOfDistinctCustomers = 0;		
 		
 		SparkConf conf = new SparkConf();
 		conf.setAppName("ComplexObjectManipulation_RDD " + NUMBER_OF_COPIES);
@@ -91,31 +104,29 @@ public class AggregatePartIDsFromCustomer_RDD {
 		startTime = System.nanoTime();
 		
 
-		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES); 
+		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
+		
+		if (queryIncludesHDFSTime == 1) { 		
 				
-		// Caching made the experiment slower 
-//		System.out.println("Cache the data");
-		
-//		customerRDD.persist(StorageLevel.MEMORY_ONLY_2());
-
-//		customerRDD.persist(StorageLevel.MEMORY_AND_DISK());
-		customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
-		
-		customerRDD=customerRDD.coalesce(numPartitions);
-
-		
-		System.out.println("Get the number of Customers");
-
-		// force spark to do the job and load data into RDD
-		long numberOfCustomers = customerRDD.count();
-		
-		countTimestamp = System.nanoTime();
-		
-     	System.out.println("Number of Customer: " + numberOfCustomers);
-     	     	
-     	// do something else to have the data in memory 		
-     	long numberOfDistinctCustomers = customerRDD.distinct().count();
-     	System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
+			customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
+			
+			customerRDD=customerRDD.coalesce(numPartitions);
+	
+			
+			System.out.println("Get the number of Customers");
+	
+			// force spark to do the job and load data into RDD
+		    numberOfCustomers = customerRDD.count();
+			
+			countTimestamp = System.nanoTime();
+			
+	     	System.out.println("Number of Customer: " + numberOfCustomers);
+	     	     	
+	     	// do something else to have the data in memory 		
+	     	numberOfDistinctCustomers = customerRDD.distinct().count();
+	     	System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
+	     	
+		}
      	
 		// #############################################
 		// #############################################
