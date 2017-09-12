@@ -88,7 +88,7 @@ public class GenerateDataFileOnHDFS_RDD {
 			conf.set("spark.kryo.registrator", MyKryoRegistrator.class.getName());
 			conf.set("spark.io.compression.codec", "lzf"); // snappy, lzf, lz4			
 		} else {			
-			hdfsNameNodePath = "hdfs://10.134.96.100:9000/user/kia/no-compress-no-serial/customer-";				
+			hdfsNameNodePath = hdfsNameNodePath + "no-compress-no-serial/customer-";				
 		}
 		
 		// hadoop configurations
