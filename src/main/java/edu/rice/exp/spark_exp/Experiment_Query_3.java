@@ -108,7 +108,7 @@ public class Experiment_Query_3 {
 				
 			customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
 			
-			customerRDD=customerRDD.coalesce(numPartitions);
+			//customerRDD=customerRDD.coalesce(numPartitions);
 	
 			
 			System.out.println("Get the number of Customers");
