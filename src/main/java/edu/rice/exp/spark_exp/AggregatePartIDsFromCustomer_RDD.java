@@ -124,7 +124,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 	     	System.out.println("Number of Customer: " + numberOfCustomers);
 	     	     	
 	     	// do something else to have the data in memory 		
-	     	numberOfDistinctCustomers = customerRDD.distinct().count();
+	     	//numberOfDistinctCustomers = customerRDD.distinct().count();
 	     	System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
 	     	
 		} 
