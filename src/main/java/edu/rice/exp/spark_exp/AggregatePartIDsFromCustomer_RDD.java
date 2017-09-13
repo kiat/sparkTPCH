@@ -35,11 +35,13 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 		
 		long startTime = 0;					// timestamp from the beginning
+		long readFileTime = 0;				// timestamp after reading from HDFS	
 		long countTimestamp = 0;			// timestamp after count that reads
 											// from disk into RDD
 		long startQueryTimestamp = 0;		// timestamp before query begins
 		long finalTimestamp = 0;			// timestamp final		
 
+		double readsHDFSTime = 0;			// time to read from HDFS (not including count + count.distinct)
 		double loadRDDTime = 0;				// time to load RDD in memory (includes count + count.distinct)
 		double countTime = 0;				// time to count (includes only count)		
 		double queryTime = 0;				// time to run the query (doesn't include data load)
@@ -59,7 +61,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 		// 0 = the query time doesn't include count nor count.distinct 
 		//     (thus calculated time includes reading from HDFS)
 		// 1 = the query includes count and count.distinct (default)
-		int queryIncludesHDFSTime=1;		
+		int warmCache=1;		
 
 		if (args.length > 0)
 			NUMBER_OF_COPIES = Integer.parseInt(args[0]);
@@ -74,7 +76,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 			hdfsNameNodePath = args[3];
 
 		if (args.length > 4)
-			queryIncludesHDFSTime =  Integer.parseInt(args[4]);		
+			warmCache =  Integer.parseInt(args[4]);		
 		
 		long numberOfCustomers = 0;
 		long numberOfDistinctCustomers = 0;		
@@ -103,16 +105,15 @@ public class AggregatePartIDsFromCustomer_RDD {
 		// Get the initial time
 		startTime = System.nanoTime();
 		
-
 		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
+
+		readFileTime = System.nanoTime();
 		
-		if (queryIncludesHDFSTime == 1) { 		
-				
-			customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
-			
+		if (warmCache == 1) { 		
+							
 			//customerRDD=customerRDD.coalesce(numPartitions);
-	
-			
+			customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());			
+				
 			System.out.println("Get the number of Customers");
 	
 			// force spark to do the job and load data into RDD
@@ -126,7 +127,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 	     	numberOfDistinctCustomers = customerRDD.distinct().count();
 	     	System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
 	     	
-		}
+		} 
      	
 		// #############################################
 		// #############################################
@@ -236,6 +237,8 @@ public class AggregatePartIDsFromCustomer_RDD {
 		// Calculate elapsed times
 		// time to load data from hdfs into RDD
 		loadRDDTime = (startQueryTimestamp - startTime) / 1000000000.0;
+		// reads file from HDFS time
+		readsHDFSTime = (readFileTime - startTime) / 1000000000.0;		
 		// query time including loading RDD into memory
 		countTime = (startQueryTimestamp - countTimestamp) / 1000000000.0;
 		// query time not including loading RDD into memory
@@ -244,7 +247,10 @@ public class AggregatePartIDsFromCustomer_RDD {
 		elapsedTotalTime = (finalTimestamp - startTime) / 1000000000.0;
 		
 		// print out the final results
-		System.out.println("Result Query 1:\nDataset Factor: "+NUMBER_OF_COPIES+"\nNum Part: "+numPartitions+"\nNum Cust: "+numberOfCustomers+"\nResult count: " +finalResultCount+"\nLoad RDD time: "+ String.format("%.9f", loadRDDTime)+"\nTime to count: "+ String.format("%.9f", countTime)+"\nQuery time: "+ String.format("%.9f", queryTime)+"\nTotal time: "+ String.format("%.9f", elapsedTotalTime));
+		if (warmCache == 1) 
+			System.out.println("Result Query 1:\nDataset Factor: "+NUMBER_OF_COPIES+"\nNum Part: "+numPartitions+"\nNum Cust: "+numberOfCustomers+"\nResult count: " +finalResultCount+"\nReads HDFS time: " +readsHDFSTime+"\nLoad RDD time: "+ String.format("%.9f", loadRDDTime)+"\nTime to count: "+ String.format("%.9f", countTime)+"\nQuery time: "+ String.format("%.9f", queryTime)+"\nTotal time: "+ String.format("%.9f", elapsedTotalTime));
+		else
+			System.out.println("Result Query 1:\nDataset Factor: "+NUMBER_OF_COPIES+"\nNum Part: "+numPartitions+"\nNum Cust: "+numberOfCustomers+"\nResult count: " +finalResultCount+"\nReads HDFS time: " +readsHDFSTime+"\nLoad RDD time: "+ String.format("%.9f", loadRDDTime)+"\nQuery time: "+ String.format("%.9f", queryTime)+"\nTotal time: "+ String.format("%.9f", elapsedTotalTime));			
 
 	}
 }
