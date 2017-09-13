@@ -111,13 +111,13 @@ public class AggregatePartIDsFromCustomer_RDD {
 		
 		if (warmCache == 1) { 		
 							
-			//customerRDD=customerRDD.coalesce(numPartitions);
+			customerRDD=customerRDD.coalesce(numPartitions);
 			customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());			
 				
 			System.out.println("Get the number of Customers");
 	
 			// force spark to do the job and load data into RDD
-		    //numberOfCustomers = customerRDD.count();
+		    numberOfCustomers = customerRDD.count();
 			
 			countTimestamp = System.nanoTime();
 			
