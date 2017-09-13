@@ -117,14 +117,14 @@ public class AggregatePartIDsFromCustomer_RDD {
 			System.out.println("Get the number of Customers");
 	
 			// force spark to do the job and load data into RDD
-		    numberOfCustomers = customerRDD.count();
+		    //numberOfCustomers = customerRDD.count();
 			
 			countTimestamp = System.nanoTime();
 			
 	     	System.out.println("Number of Customer: " + numberOfCustomers);
 	     	     	
 	     	// do something else to have the data in memory 		
-	     	//numberOfDistinctCustomers = customerRDD.distinct().count();
+	     	numberOfDistinctCustomers = customerRDD.distinct().count();
 	     	System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
 	     	
 		} 
