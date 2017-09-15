@@ -140,26 +140,24 @@ public class AggregatePartIDsFromCustomer_RDD {
      	startQueryTimestamp = System.nanoTime();
 
 		
-		// flatMap to pair <partKey, <CustomerName, PartID>>
-		JavaPairRDD<Integer, Tuple2<String, Integer>> soldPartIDs = customerRDD.flatMapToPair(
-				new PairFlatMapFunction<Customer, Integer, Tuple2<String, Integer>>(){
+		// flatMap to pair <SupplierName, <CustomerName, PartID>>
+		JavaPairRDD<String, Tuple2<String, Integer>> soldPartIDs = customerRDD.flatMapToPair(
+				new PairFlatMapFunction<Customer, String, Tuple2<String, Integer>>(){
 			
 				private static final long serialVersionUID = -1932241861741271488L;
 
 			@Override
-			public Iterator<Tuple2<Integer, Tuple2<String, Integer>>> call(Customer customer) throws Exception {
+			public Iterator<Tuple2<String, Tuple2<String, Integer>>> call(Customer customer) throws Exception {
 				List<Order> orders = customer.getOrders();
-				List<Tuple2<Integer, Tuple2<String, Integer>>> returnList = new ArrayList<Tuple2<Integer, Tuple2<String, Integer>>>();
+				List<Tuple2<String, Tuple2<String, Integer>>> returnList = new ArrayList<Tuple2<String, Tuple2<String, Integer>>>();
 				
 				for (Order order : orders) {
 					List<LineItem> lineItems = order.getLineItems();
 					for (LineItem lineItem : lineItems) {
 						Tuple2<String, Integer> supplierPartID = new Tuple2<String, Integer>(customer.getName(), lineItem.getPart().getPartID());
-						returnList.add(new Tuple2<Integer, Tuple2<String, Integer>>(lineItem.getSupplier().getSupplierKey(), supplierPartID));
+						returnList.add(new Tuple2<String, Tuple2<String, Integer>>(lineItem.getSupplier().getName(), supplierPartID));
 					}
 				}
-				
-				
 				return returnList.iterator();
 			}
 		});
@@ -173,7 +171,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 		// 1. zero initializations,
 		// 2. a function to add data to a Map<String, List<Integer> object and
 		// 3. a function to merge two Map<String, List<Integer> objects.
-		JavaPairRDD<Integer, Map<String, List<Integer>>> result = soldPartIDs.aggregateByKey(new HashMap<String, List<Integer>>(),
+		JavaPairRDD<String, Map<String, List<Integer>>> result = soldPartIDs.aggregateByKey(new HashMap<String, List<Integer>>(),
 				new Function2<Map<String, List<Integer>>, Tuple2<String, Integer>, Map<String, List<Integer>>>() {
 	
 					private static final long serialVersionUID = -1688402472496211511L;
