@@ -95,6 +95,10 @@ public class AggregatePartIDsFromCustomer_RDD {
 		conf.set("spark.shuffle.spill", "true");
 		
 		JavaSparkContext sc = new JavaSparkContext(conf);
+
+		// Print application Id so it can be used via REST API to analyze processing
+		// times
+		System.out.println("Application Id: " + sc.sc().applicationId());		
 		
 		
 		conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
@@ -250,7 +254,10 @@ public class AggregatePartIDsFromCustomer_RDD {
 		if (warmCache == 1) 
 			System.out.println("Result Query 1:\nDataset Factor: "+NUMBER_OF_COPIES+"\nNum Part: "+numPartitions+"\nNum Cust: "+numberOfCustomers+"\nResult count: " +finalResultCount+"\nReads HDFS time: " +readsHDFSTime+"\nLoad RDD time: "+ String.format("%.9f", loadRDDTime)+"\nTime to count: "+ String.format("%.9f", countTime)+"\nQuery time: "+ String.format("%.9f", queryTime)+"\nTotal time: "+ String.format("%.9f", elapsedTotalTime));
 		else
-			System.out.println("Result Query 1:\nDataset Factor: "+NUMBER_OF_COPIES+"\nNum Part: "+numPartitions+"\nNum Cust: "+numberOfCustomers+"\nResult count: " +finalResultCount+"\nReads HDFS time: " +readsHDFSTime+"\nLoad RDD time: "+ String.format("%.9f", loadRDDTime)+"\nQuery time: "+ String.format("%.9f", queryTime)+"\nTotal time: "+ String.format("%.9f", elapsedTotalTime));			
+			System.out.println("Result Query 1:\nDataset Factor: "+NUMBER_OF_COPIES+"\nNum Part: "+numPartitions+"\nNum Cust: "+numberOfCustomers+"\nResult count: " +finalResultCount+"\nReads HDFS time: " +readsHDFSTime+"\nLoad RDD time: "+ String.format("%.9f", loadRDDTime)+"\nQuery time: "+ String.format("%.9f", queryTime)+"\nTotal time: "+ String.format("%.9f", elapsedTotalTime));
+	
+		// Finally stop the Spark context once all is completed
+		sc.stop();
 
 	}
 }
