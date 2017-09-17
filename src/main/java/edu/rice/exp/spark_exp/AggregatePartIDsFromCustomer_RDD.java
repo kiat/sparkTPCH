@@ -166,50 +166,65 @@ public class AggregatePartIDsFromCustomer_RDD {
 			}
 		});
 		
-		
-
-		
-
 		// Now, we need to aggregate the results
 		// aggregateByKey needs 3 parameters:
 		// 1. zero initializations,
 		// 2. a function to add data to a Map<String, List<Integer> object and
 		// 3. a function to merge two Map<String, List<Integer> objects.
-		JavaPairRDD<String, Map<String, List<Integer>>> result = soldPartIDs.aggregateByKey(new HashMap<String, List<Integer>>(),
-				new Function2<Map<String, List<Integer>>, Tuple2<String, Integer>, Map<String, List<Integer>>>() {
+		//    the RDD contains <String:SupplierName, Tuple2<String:CustomerName, Integer:PartID>>
+		JavaPairRDD<String, Map<String, List<Integer>>> result = soldPartIDs.aggregateByKey(
+				new HashMap<String, List<Integer>>(),
+				
+				// merges within partitions
+				new Function2<Map<String, List<Integer>>, 		// Accumulator: map of <Supplier, List<Id's>>
+							  Tuple2<String, Integer>, 			// 1st Value to Merge: tuple of <Supplier, Id>
+							  Map<String, List<Integer>>>()	{	// 2nd Value to Merge: map of <Supplier, List<Id's>>
 	
 					private static final long serialVersionUID = -1688402472496211511L;
 
 					@Override
-					public Map<String, List<Integer>> call(Map<String, List<Integer>> suppData, Tuple2<String, Integer> tuple) throws Exception {
+					// returns a map of <Supplier, List<Id's>>
+					public Map<String, List<Integer>> call(Map<String, List<Integer>> suppData, 
+														   Tuple2<String, Integer> tuple) throws Exception {
 
 						List<Integer> intList = new ArrayList<Integer>();
+						// adds the Tuple->PartId to the list
 						intList.add(tuple._2);
+						// adds the entry to the Map<Supplier, List<PartID's>
 						suppData.put((String) tuple._1, intList);
 
 						return suppData;
 					}
 
-				}, new Function2<Map<String, List<Integer>>, Map<String, List<Integer>>, Map<String, List<Integer>>>() {
+				   // merges between partitions					
+				}, new Function2<Map<String, List<Integer>>,		//  Accumulator: map of <Supplier, List<Id's>>
+								 Map<String, List<Integer>>, 		//  1st Value to Merge: map of <Supplier, List<Id's>>
+								 Map<String, List<Integer>>>() {	//  2nd Value to Merge: map of <Supplier, List<Id's>>
+					
 					private static final long serialVersionUID = -1503342516335901464L;
  
 					@Override
-					public Map<String, List<Integer>> call(Map<String, List<Integer>> suppData1, Map<String, List<Integer>> suppData2) throws Exception {
-//						// merge the two HashMaps inside the SupplierData
-//						Iterator<String> it=suppData2.keySet().iterator();
-//						
-//						while (it.hasNext()) {
-//							String key = it.next();
-//							if (suppData1.containsKey(key)) {
-//								List<Integer> tmpIDList=suppData1.get(key);
-//								// get the List and aggregate PartID to the existing list
-//								tmpIDList.addAll(suppData2.get(key));
-//								suppData1.put(key, tmpIDList);
-//							}
-//						}
+					// returns a map of <Supplier, List<Id's>>					
+					public Map<String, List<Integer>> call(Map<String, List<Integer>> suppData1, 
+														   Map<String, List<Integer>> suppData2) throws Exception {
 						
+						// This code is replaced with line suppData1.putAll(suppData2);
 						
-						suppData1.putAll(suppData2);
+						// merge the two HashMaps inside the SupplierData
+						Iterator<String> it=suppData2.keySet().iterator();
+						
+						while (it.hasNext()) {
+							String key = it.next();
+							if (suppData1.containsKey(key)) {
+								List<Integer> tmpIDList=suppData1.get(key);
+								// get the List and aggregate PartID to the existing list
+								tmpIDList.addAll(suppData2.get(key));
+								suppData1.put(key, tmpIDList);
+							}
+						}
+						
+						// accumulates the new map with the existing one
+//						suppData1.putAll(suppData2);
 
 						return suppData1;
 					}
