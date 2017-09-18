@@ -111,8 +111,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 		// Get the initial time
 		startTime = System.nanoTime();
 
-//		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
-		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);
+		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
 		
 		readFileTime = System.nanoTime();
 
@@ -219,11 +218,9 @@ public class AggregatePartIDsFromCustomer_RDD {
 								// get the List and aggregate PartID to the existing list
 								tmpIDList.addAll(suppData2.get(key));
 								suppData1.put(key, tmpIDList);
-								System.out.println("we update key: " + key);
 							} else {
 								List<Integer> tmpIDList = suppData2.get(key);
 								suppData1.put(key, tmpIDList);
-								System.out.println("we update key: " + key);
 							}
 						}
 
