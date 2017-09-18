@@ -197,17 +197,19 @@ public class AggregatePartIDsFromCustomer_RDD {
 //						Iterator<String>  it1 = suppData.keySet().iterator();
 //						
 //						Integer times=0;
+//						Integer yes=0;
+//						Integer no=0;
 //						while (it1.hasNext()) {
 //							times++;
 //							String key = it1.next();
 //							if (key.matches("test*")) {
-//								System.out.println("matches");
+//								yes++;
 //							} else {
-//								System.out.println(" no matches");								
+//								no++;								
 //							}
 //						}						
 //
-//						System.out.println(" Within lambda executed times: " + times);								
+//						System.out.println(" Within lambda executed times: " + times + " | Yes: " + yes + " | No: " + no);								
 
 						return suppData;
 					}
@@ -240,21 +242,23 @@ public class AggregatePartIDsFromCustomer_RDD {
 							}
 						}
 
-						// FIXME: to slow down the within partition Spark lambda (remove for benchmark!!!!!)
-						Iterator<String>  it1 = suppData1.keySet().iterator();
-						
-						Integer times=0;
-						while (it1.hasNext()) {
-							times++;
-							String key = it1.next();
-							if (key.matches("test*")) {
-								System.out.println("matches");
-							} else {
-								System.out.println(" no matches");								
-							}
-						}						
-
-						System.out.println(" Within lambda executed times: " + times);								
+//						// FIXME: to slow down the within partition Spark lambda (remove for benchmark!!!!!)
+//						Iterator<String>  it1 = suppData1.keySet().iterator();
+//						
+//						Integer times=0;
+//						Integer yes=0;
+//						Integer no=0;						
+//						while (it1.hasNext()) {
+//							times++;
+//							String key = it1.next();
+//							if (key.matches("test*")) {
+//								yes++;
+//							} else {
+//								no++;								
+//							}
+//						}						
+//
+//						System.out.println(" ---> Between lambda executed times: " + times + " | Yes: " + yes + " | No: " + no);								
 
 						
 						// or using Java 8 
