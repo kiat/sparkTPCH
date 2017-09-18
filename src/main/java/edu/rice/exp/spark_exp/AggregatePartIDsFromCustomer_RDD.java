@@ -193,21 +193,21 @@ public class AggregatePartIDsFromCustomer_RDD {
 						// adds the entry to the Map<Supplier, List<PartID's>
 						suppData.put((String) tuple._1, intList);
 						
-						// FIXME: to slow down the within partition Spark lambda (remove for benchmark!!!!!)
-						Iterator<String>  it1 = suppData.keySet().iterator();
-						
-						Integer times=0;
-						while (it1.hasNext()) {
-							times++;
-							String key = it1.next();
-							if (key.matches("test*")) {
-								System.out.println("matches");
-							} else {
-								System.out.println(" no matches");								
-							}
-						}						
-
-						System.out.println(" Within lambda executed times: " + times);								
+//						// FIXME: to slow down the within partition Spark lambda (remove for benchmark!!!!!)
+//						Iterator<String>  it1 = suppData.keySet().iterator();
+//						
+//						Integer times=0;
+//						while (it1.hasNext()) {
+//							times++;
+//							String key = it1.next();
+//							if (key.matches("test*")) {
+//								System.out.println("matches");
+//							} else {
+//								System.out.println(" no matches");								
+//							}
+//						}						
+//
+//						System.out.println(" Within lambda executed times: " + times);								
 
 						return suppData;
 					}
@@ -239,7 +239,23 @@ public class AggregatePartIDsFromCustomer_RDD {
 								suppData1.put(key, tmpIDList);
 							}
 						}
+
+						// FIXME: to slow down the within partition Spark lambda (remove for benchmark!!!!!)
+						Iterator<String>  it1 = suppData1.keySet().iterator();
 						
+						Integer times=0;
+						while (it1.hasNext()) {
+							times++;
+							String key = it1.next();
+							if (key.matches("test*")) {
+								System.out.println("matches");
+							} else {
+								System.out.println(" no matches");								
+							}
+						}						
+
+						System.out.println(" Within lambda executed times: " + times);								
+
 						
 						// or using Java 8 
 						// suppData1.forEach((key, value) -> suppData2.merge(key, value, (v1, v2) -> {v1.addAll(v2); return v1;} ));
