@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
+import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -48,7 +49,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 		// can be overwritten by the 3rd command line arg
 		int numPartitions = 8;
 
-		int NUMBER_OF_COPIES = 4;// number of Customers multiply X 2^REPLICATION_FACTOR
+		int NUMBER_OF_COPIES = 0;// number of Customers multiply X 2^REPLICATION_FACTOR
 
 		// TODO this is not used and should be removed
 		String fileScale = "0.2";
@@ -79,7 +80,13 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 		SparkConf conf = new SparkConf();
 		conf.setAppName("ComplexObjectManipulation_RDD " + NUMBER_OF_COPIES);
+		
+//		PropertyConfigurator.configure("log4j.properties");
+//		conf.setMaster("local[*]");
 
+		
+		
+		
 		// Kryo Serialization
 		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 		conf.set("spark.kryo.registrationRequired", "true");
@@ -104,8 +111,9 @@ public class AggregatePartIDsFromCustomer_RDD {
 		// Get the initial time
 		startTime = System.nanoTime();
 
-		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
-
+//		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
+		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);
+		
 		readFileTime = System.nanoTime();
 
 		if (warmCache == 1) {
@@ -161,12 +169,6 @@ public class AggregatePartIDsFromCustomer_RDD {
 				});
 
 		
-		   BiFunction<List<Integer>, List<Integer>,List<Integer>> aggregateLists = (l1, l2) -> {     
-			   	l1.addAll(l2);
-			     return l1;
-			    };
-			    
-			    
 		// Now, we need to aggregate the results
 		// aggregateByKey needs 3 parameters:
 		// 1. zero initializations,
@@ -217,9 +219,11 @@ public class AggregatePartIDsFromCustomer_RDD {
 								// get the List and aggregate PartID to the existing list
 								tmpIDList.addAll(suppData2.get(key));
 								suppData1.put(key, tmpIDList);
+								System.out.println("we update key: " + key);
 							} else {
 								List<Integer> tmpIDList = suppData2.get(key);
 								suppData1.put(key, tmpIDList);
+								System.out.println("we update key: " + key);
 							}
 						}
 
@@ -232,6 +236,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 				});
 
+		
 		// At the end we do not do a result.count() but we do a map and reduce task to count up the final results
 		Tuple2<Integer, Integer> finalResult = result.mapToPair(word -> new Tuple2<>(0, 1)).reduce(
 				new Function2<Tuple2<Integer, Integer>, Tuple2<Integer, Integer>, Tuple2<Integer, Integer>>() {
