@@ -187,11 +187,24 @@ public class AggregatePartIDsFromCustomer_RDD {
 					// returns a map of <Supplier, List<Id's>>
 					public Map<String, List<Integer>> call(Map<String, List<Integer>> suppData, Tuple2<String, Integer> tuple) throws Exception {
 
-						List<Integer> intList = new ArrayList<Integer>();
-						// adds the Tuple->PartId to the list
-						intList.add(tuple._2);
-						// adds the entry to the Map<Supplier, List<PartID's>
-						suppData.put((String) tuple._1, intList);
+						if (suppData.containsKey(tuple._1)) {
+							List<Integer> myExistingList = suppData.get(tuple._1);
+							// adds the Tuple->PartId to the list
+							myExistingList.add(tuple._2);
+							// adds the entry to the Map<Supplier, List<PartID's>
+							suppData.put((String) tuple._1, myExistingList);
+						} else {
+
+							// Initialize the list with 10000 entries
+							List<Integer> myNewList = new ArrayList<Integer>(10000);
+							// adds the Tuple->PartId to the list
+							myNewList.add(tuple._2);
+							// adds the entry to the Map<Supplier, List<PartID's>
+							suppData.put((String) tuple._1, myNewList);
+						}
+
+
+
 						
 //						// FIXME: to slow down the within partition Spark lambda (remove for benchmark!!!!!)
 //						Iterator<String>  it1 = suppData.keySet().iterator();
