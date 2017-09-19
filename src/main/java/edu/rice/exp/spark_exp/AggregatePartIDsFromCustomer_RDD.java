@@ -154,7 +154,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 					@Override
 					public Iterator<Tuple2<String, Tuple2<String, Integer>>> call(Customer customer) throws Exception {
 						List<Order> orders = customer.getOrders();
-						List<Tuple2<String, Tuple2<String, Integer>>> returnList = new ArrayList<Tuple2<String, Tuple2<String, Integer>>>();
+						List<Tuple2<String, Tuple2<String, Integer>>> returnList = new ArrayList<Tuple2<String, Tuple2<String, Integer>>>(orders.size());
 
 						for (Order order : orders) {
 							List<LineItem> lineItems = order.getLineItems();
