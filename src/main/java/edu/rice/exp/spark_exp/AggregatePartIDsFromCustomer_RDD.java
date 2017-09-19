@@ -177,15 +177,16 @@ public class AggregatePartIDsFromCustomer_RDD {
 		JavaPairRDD<String, Map<String, List<Integer>>> result = soldPartIDs.aggregateByKey(new HashMap<String, List<Integer>>(),
 
 		// merges within partitions
-				new Function2<Map<String, List<Integer>>, // Accumulator: map of <Supplier, List<Id's>>
-				Tuple2<String, Integer>, // 1st Value to Merge: tuple of <Supplier, Id>
-				Map<String, List<Integer>>>() { // 2nd Value to Merge: map of <Supplier, List<Id's>>
+				new Function2<Map<String, List<Integer>>, 		// Accumulator: map of <Supplier, List<Id's>>
+							  Tuple2<String, Integer>, 			// 1st Value to Merge: tuple of <Supplier, Id>
+							  Map<String, List<Integer>>>() {	 // 2nd Value to Merge: map of <Supplier, List<Id's>>
 
 					private static final long serialVersionUID = -1688402472496211511L;
 
 					@Override
 					// returns a map of <Supplier, List<Id's>>
-					public Map<String, List<Integer>> call(Map<String, List<Integer>> suppData, Tuple2<String, Integer> tuple) throws Exception {
+					public Map<String, List<Integer>> call(Map<String, List<Integer>> suppData, 
+														   Tuple2<String, Integer> tuple) throws Exception {
 
 						List<Integer> intList = new ArrayList<Integer>();
 						// adds the Tuple->PartId to the list
@@ -223,7 +224,8 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 					@Override
 					// returns a map of <Supplier, List<Id's>>
-					public Map<String, List<Integer>> call(Map<String, List<Integer>> suppData1, Map<String, List<Integer>> suppData2) throws Exception {
+					public Map<String, List<Integer>> call(Map<String, List<Integer>> suppData1, 	
+														   Map<String, List<Integer>> suppData2) throws Exception {
 
 						// merge the two HashMaps inside the SupplierData
 						Iterator<String> it = suppData2.keySet().iterator();
