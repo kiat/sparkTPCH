@@ -174,7 +174,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 				}
 			});
 		
-		soldPartIDs.take(1000).forEach(data -> {
+		soldPartIDs.collect().forEach(data -> {
 	        System.out.println("SupplierName: "+data._1() + " [ " + data._2() + " ]");
 	    }); 
 
