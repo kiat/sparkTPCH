@@ -245,8 +245,6 @@ public class AggregatePartIDsFromCustomer_RDD {
 					
 					// or using Java 8 
 					// suppData1.forEach((key, value) -> suppData2.merge(key, value, (v1, v2) -> {v1.addAll(v2); return v1;} ));
-					//print for debugging
-					System.out.println("Print: " + suppData1.toString());
 					return suppData1;
 				}
 
