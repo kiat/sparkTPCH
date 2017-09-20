@@ -174,10 +174,6 @@ public class AggregatePartIDsFromCustomer_RDD {
 				}
 			});
 		
-		soldPartIDs.collect().forEach(data -> {
-	        System.out.println("SupplierName: "+data._1() + " [ " + data._2() + " ]");
-	    }); 
-
 		
 		// Now, we need to aggregate the results
 		// aggregateByKey needs 3 parameters:
@@ -249,7 +245,8 @@ public class AggregatePartIDsFromCustomer_RDD {
 					
 					// or using Java 8 
 					// suppData1.forEach((key, value) -> suppData2.merge(key, value, (v1, v2) -> {v1.addAll(v2); return v1;} ));
-					
+					//print for debugging
+					System.out.println("Print: " + suppData1.toString());
 					return suppData1;
 				}
 
