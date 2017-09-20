@@ -203,8 +203,8 @@ public class AggregatePartIDsFromCustomer_RDD {
 						// adds the entry to the Map<Supplier, List<PartID's>
 						suppData.put((String) tuple._1, myExistingList);
 					} else {
-						// Initialize the list with 10000 entries
-						List<Integer> myNewList = new ArrayList<Integer>(10000);
+						// Initialize the list
+						List<Integer> myNewList = new ArrayList<Integer>();
 						// adds the Tuple->PartId to the list
 						myNewList.add(tuple._2);
 						// adds the entry to the Map<Supplier, List<PartID's>
