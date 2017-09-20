@@ -173,6 +173,10 @@ public class AggregatePartIDsFromCustomer_RDD {
 					return returnList.iterator();
 				}
 			});
+		
+		soldPartIDs.take(1000).forEach(data -> {
+	        System.out.println("SupplierName: "+data._1() + " [ " + data._2() + " ]");
+	    }); 
 
 		
 		// Now, we need to aggregate the results
@@ -288,11 +292,11 @@ public class AggregatePartIDsFromCustomer_RDD {
 			System.out.println("Result Query 1:\nDataset Factor: " + NUMBER_OF_COPIES + "\nNum Part: " + numPartitions + "\nNum Cust: " + numberOfCustomers
 					+ "\nResult count: " + finalResultCount + "\nReads HDFS time: " + readsHDFSTime + "\nLoad RDD time: " + String.format("%.9f", loadRDDTime)
 					+ "\nTime to count: " + String.format("%.9f", countTime) + "\nQuery time: " + String.format("%.9f", queryTime) + "\nTotal time: "
-					+ String.format("%.9f", elapsedTotalTime));
+					+ String.format("%.9f", elapsedTotalTime) + "\n");
 		else
 			System.out.println("Result Query 1:\nDataset Factor: " + NUMBER_OF_COPIES + "\nNum Part: " + numPartitions + "\nNum Cust: " + numberOfCustomers
 					+ "\nResult count: " + finalResultCount + "\nReads HDFS time: " + readsHDFSTime + "\nLoad RDD time: " + String.format("%.9f", loadRDDTime)
-					+ "\nQuery time: " + String.format("%.9f", queryTime) + "\nTotal time: " + String.format("%.9f", elapsedTotalTime));
+					+ "\nQuery time: " + String.format("%.9f", queryTime) + "\nTotal time: " + String.format("%.9f", elapsedTotalTime) + "\n");
 
 		// Finally stop the Spark context once all is completed
 		sc.stop();
