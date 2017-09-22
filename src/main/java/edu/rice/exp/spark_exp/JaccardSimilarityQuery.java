@@ -231,7 +231,7 @@ public class JaccardSimilarityQuery {
 					private static final long serialVersionUID = -1932241861741271488L;
 		
 					@Override
-					public Tuple2<Integer, Tuple2<Double, List<Integer>>> call(Tuple2<Integer, List<Integer>> value) throws Exception {
+					public Iterator<Tuple2<Integer, Tuple2<Double, List<Integer>>>> call(Tuple2<Integer, List<Integer>> value) throws Exception {
 
 						
 						// PartID's for this customer TODO: get the values
@@ -301,7 +301,9 @@ public class JaccardSimilarityQuery {
 						Double similarityValue = new Double((double)(inCommon.size() / totalUniquePartsID.size()));
 						
 						// adds the similarity along with part ID's purchased by this Customer
-						Tuple2<Double, List<Integer>> innerTuple = new Tuple2<Double, List<Integer>>(similarityValue, customerListOfPartsIds);
+						Tuple2<Double, List<Integer>> innerTuple = 
+								new Tuple2<Double, List<Integer>>(similarityValue, customerListOfPartsIds);
+						// adds the Customer.key
 						Tuple2<Integer, Tuple2<Double, List<Integer>>> outerTuple = 
 								new Tuple2<Integer, Tuple2<Double, List<Integer>>>(new Integer(0), innerTuple);
 						
