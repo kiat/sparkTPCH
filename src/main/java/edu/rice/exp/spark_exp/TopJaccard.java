@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.Set;
 
 import org.apache.log4j.PropertyConfigurator;
@@ -18,6 +19,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.storage.StorageLevel;
 
 import scala.Tuple2;
@@ -25,11 +27,25 @@ import edu.rice.dmodel.Customer;
 import edu.rice.dmodel.LineItem;
 import edu.rice.dmodel.MyKryoRegistrator;
 import edu.rice.dmodel.Order;
+import edu.rice.dmodel.Wrapper;
 import edu.rice.generate_data.DataGenerator;
+
+import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.PairFunction;
 
 public class TopJaccard {
 
+	// the capacity of priority queue is 10
+	public static PriorityQueue<Wrapper> topKQueue = new PriorityQueue<Wrapper>(10);
+
+	public static List<Integer> myQuery = new ArrayList<Integer>();
+
 	public static void main(String[] args) throws FileNotFoundException, IOException {
+		int[] thisIsAnIntArray = { 371, 374, 780, 888, 937, 985, 1165, 1249, 1296, 1701, 1808, 2018, 2111 };
+
+		for (int i : thisIsAnIntArray) {
+			TopJaccard.myQuery.add(i);
+		}
 
 		// can be overwritten by the fourth command line arg
 		String hdfsNameNodePath = "hdfs://10.134.96.100:9000/user/kia/customer-";
@@ -146,15 +162,12 @@ public class TopJaccard {
 		// Start the timer
 		startQueryTimestamp = System.nanoTime();
 
-		JavaPairRDD<String, List<Integer>> soldPartIDs = customerRDD.flatMapToPair(new PairFlatMapFunction<Customer, String, List<Integer>>() {
-
-			private static final long serialVersionUID = -1932241861741271488L;
+		JavaRDD<Wrapper> myMappedData = customerRDD.map(new Function<Customer, Wrapper>() {
 
 			@Override
-			public Iterator<Tuple2<String, List<Integer>>> call(Customer customer) throws Exception {
-				List<Order> orders = customer.getOrders();
+			public Wrapper call(Customer customer) throws Exception {
 
-				List<Tuple2<String, List<Integer>>> returnList = new ArrayList<Tuple2<String, List<Integer>>>(orders.size());
+				List<Order> orders = customer.getOrders();
 
 				// A List to store partIDs for each Customer
 				Set<Integer> partIDSet = new HashSet<Integer>();
@@ -173,136 +186,90 @@ public class TopJaccard {
 				List<Integer> partIDSortedList = new ArrayList<Integer>(partIDSet);
 				Collections.sort(partIDSortedList);
 
-				// now add PartIds
-				returnList.add(new Tuple2<String, List<Integer>>(customer.getName(), partIDSortedList));
+				return new Wrapper(customer.getCustkey(), partIDSortedList);
+			}
 
-				return returnList.iterator();
+		});
+		//
+		// List<Wrapper> took10 = myMappedData.take(10);
+		//
+		// for (Wrapper tuple2 : took10) {
+		// System.out.println(tuple2);
+		//
+		// }
+
+		myMappedData.foreach(new VoidFunction<Wrapper>() {
+
+			private static final long serialVersionUID = 4710286206160441612L;
+
+			@Override
+			public void call(Wrapper myGuy) throws Exception {
+
+				if (myGuy.getPartIDs() == null)
+					return;
+
+				if (myGuy.getPartIDs().size() == 0)
+					return;
+
+				List<Integer> customerListOfPartsIds = myGuy.getPartIDs();
+				List<Integer> queryListOfPartsIds = TopJaccard.myQuery;
+
+				// will store the common PartID's
+				List<Integer> inCommon = new ArrayList<Integer>();
+
+				// will store all PartID's (repeated counts only one)
+				List<Integer> totalUniquePartsID = new ArrayList<Integer>();
+
+				int countFirst = 0;
+				int countSecond = 0;
+
+				while (countFirst < queryListOfPartsIds.size() && countSecond < customerListOfPartsIds.size()) {
+
+					if (queryListOfPartsIds.get(countFirst) > customerListOfPartsIds.get(countSecond)) {
+						totalUniquePartsID.add(customerListOfPartsIds.get(countSecond));
+						countSecond++;
+					} else {
+						if (queryListOfPartsIds.get(countFirst) == customerListOfPartsIds.get(countSecond)) {
+
+							inCommon.add(queryListOfPartsIds.get(countFirst));
+							countSecond++;
+						}
+						totalUniquePartsID.add(queryListOfPartsIds.get(countFirst));
+						countFirst++;
+					}
+				}
+
+				// now add the not in common entries for the largest list
+				if (queryListOfPartsIds.size() > customerListOfPartsIds.size()) {
+
+					for (int i = 0; i < queryListOfPartsIds.size(); i++)
+						totalUniquePartsID.add(queryListOfPartsIds.get(i));
+
+				} else {
+
+					for (int i = 0; i < customerListOfPartsIds.size(); i++)
+						totalUniquePartsID.add(customerListOfPartsIds.get(i));
+
+				}
+
+				Double similarityValue = new Double((double) (inCommon.size() / totalUniquePartsID.size()));
+
+				// set the score for my guy
+				myGuy.setScore(similarityValue);
+
+				System.out.println(inCommon.size()  + "/ " + totalUniquePartsID.size() +" = "+similarityValue);
+
+				// add my guy to the priorityQueue.
+				TopJaccard.topKQueue.add(myGuy);
 
 			}
 
 		});
 
-		List<Tuple2<String, List<Integer>>> took10 = soldPartIDs.take(10);
-
-		
-		
-		for (Tuple2<String, List<Integer>> tuple2 : took10) {
-			System.out.println(tuple2);
-
+		for (Wrapper wrapper : TopJaccard.topKQueue) {
+			System.out.println(wrapper);
 		}
 
-		// @Override
-		// public Iterator<Tuple2<String, Tuple2<String, Integer>>> call(Customer customer) throws Exception {
-		// List<Order> orders = customer.getOrders();
-		// List<Tuple2<String, Tuple2<String, Integer>>> returnList =
-		// new ArrayList<Tuple2<String, Tuple2<String, Integer>>>(orders.size());
-		//
-		// // iterates over all orders for a customer
-		// for (Order order : orders) {
-		// List<LineItem> lineItems = order.getLineItems();
-		//
-		// //iterates over the items in an order
-		// for (LineItem lineItem : lineItems) {
-		// // creates a tuple with the customer's name and the partID
-		// Tuple2<String, Integer> supplierPartID =
-		// new Tuple2<String, Integer>(customer.getName(), lineItem.getPart().getPartID());
-		// // now adds a tuple of <SupplierName, Tuple<CustomerName, PartId>>
-		// returnList.add(new Tuple2<String, Tuple2<String, Integer>>(lineItem.getSupplier().getName(), supplierPartID));
-		// }
-		// }
-		// return returnList.iterator();
-		// }
-		// });
-
-		// // Now, we need to aggregate the results
-		// // aggregateByKey needs 3 parameters:
-		// // 1. zero initializations,
-		// // 2. a function to add data to a Map<String, List<Integer> object and
-		// // 3. a function to merge two Map<String, List<Integer> objects.
-		// // the RDD contains <String:SupplierName, Tuple2<String:CustomerName, Integer:PartID>>
-		// JavaPairRDD<String, Map<String, List<Integer>>> result =
-		// soldPartIDs.aggregateByKey(new HashMap<String, List<Integer>>(),
-		//
-		// // lambda function merges within partitions
-		// new Function2<Map<String, List<Integer>>, // Accumulator: map of <Supplier, List<PartId's>>
-		// Tuple2<String, Integer>, // 1st Value to Merge: tuple of <SupplierName, PartId's>
-		// Map<String, List<Integer>>>() { // 2nd Value to Merge: map of <SupplierName, List<PartId's>>
-		//
-		// private static final long serialVersionUID = -1688402472496211511L;
-		//
-		// @Override
-		// // returns a map of <Supplier, List<Id's>>
-		// public Map<String, List<Integer>> call(Map<String, List<Integer>> suppData,
-		// Tuple2<String, Integer> tuple) throws Exception {
-		//
-		// if (suppData.containsKey(tuple._1)) {
-		// List<Integer> myExistingList = suppData.get(tuple._1);
-		// // adds the Tuple->PartId to the list
-		// myExistingList.add(tuple._2);
-		// // adds the entry to the Map<Supplier, List<PartID's>
-		// suppData.put((String) tuple._1, myExistingList);
-		// } else {
-		// // Initialize the list
-		// List<Integer> myNewList = new ArrayList<Integer>();
-		// // adds the Tuple->PartId to the list
-		// myNewList.add(tuple._2);
-		// // adds the entry to the Map<Supplier, List<PartID's>
-		// suppData.put((String) tuple._1, myNewList);
-		// }
-		//
-		// return suppData;
-		// }
-		//
-		// // merges between partitions
-		// }, new Function2<Map<String, List<Integer>>, // Accumulator: map of <Supplier, List<PartId's>>
-		// Map<String, List<Integer>>, // 1st Value to Merge: map of <Supplier, List<PartId's>>
-		// Map<String, List<Integer>>>() { // 2nd Value to Merge: map of <Supplier, List<PartId's>>
-		//
-		// private static final long serialVersionUID = -1503342516335901464L;
-		//
-		// @Override
-		// // returns a map of <Supplier, List<PartId's>>
-		// public Map<String, List<Integer>> call(Map<String, List<Integer>> suppData1,
-		// Map<String, List<Integer>> suppData2) throws Exception {
-		//
-		// // merge the two HashMaps inside the SupplierData
-		// Iterator<String> it = suppData2.keySet().iterator();
-		//
-		// while (it.hasNext()) {
-		// String key = it.next();
-		// if (suppData1.containsKey(key)) {
-		// List<Integer> tmpIDList = suppData1.get(key);
-		//
-		// // get the List and aggregate PartID to the existing list
-		// tmpIDList.addAll(suppData2.get(key));
-		// suppData1.put(key, tmpIDList);
-		// } else {
-		// List<Integer> tmpIDList = suppData2.get(key);
-		// suppData1.put(key, tmpIDList);
-		// }
-		// }
-		//
-		// // or using Java 8
-		// // suppData1.forEach((key, value) -> suppData2.merge(key, value, (v1, v2) -> {v1.addAll(v2); return v1;} ));
-		// return suppData1;
-		// }
-		//
-		// });
-		//
-		//
-		// // At the end we do not do a result.count() but we do a map and reduce task to count up the final results
-		// Tuple2<Integer, Integer> finalResult = result.mapToPair(word -> new Tuple2<>(0, 1)).reduce(
-		// new Function2<Tuple2<Integer, Integer>, Tuple2<Integer, Integer>, Tuple2<Integer, Integer>>() {
-		// private static final long serialVersionUID = 2685491879841689408L;
-		//
-		// @Override
-		// public Tuple2<Integer, Integer> call(Tuple2<Integer, Integer> arg0, Tuple2<Integer, Integer> arg1) throws Exception {
-		//
-		// Tuple2<Integer, Integer> sum = new Tuple2<Integer, Integer>(arg0._1, arg0._2 + arg1._2);
-		// return sum;
-		// }
-		//
-		// });
 		//
 		// int finalResultCount = finalResult._2;
 		//
@@ -333,6 +300,7 @@ public class TopJaccard {
 		// + "\nQuery time: " + String.format("%.9f", queryTime) + "\nTotal time: " + String.format("%.9f", elapsedTotalTime) + "\n");
 		//
 		// // Finally stop the Spark context once all is completed
+
 		sc.stop();
 
 	}
