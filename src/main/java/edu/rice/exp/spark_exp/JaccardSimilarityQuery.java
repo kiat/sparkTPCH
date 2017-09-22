@@ -124,10 +124,11 @@ public class JaccardSimilarityQuery {
 
 		conf.set("fs.local.block.size", "268435456");
 		
-		// Creates the Query Customer Object, most likely won't be a Customer
-		// because all I need is a List<Integer> for computing JaccardSimilarity
-		Customer customerQuery = new Customer();
-
+		// Creates a List<Integer> with the PartID's I want to use for 
+		// computing JaccardSimilarity TODO: read from arg
+		List<Integer> queryListOfPartsIds = 
+		    new ArrayList<Integer>();		
+		
 		// Get the initial time
 		startTime = System.nanoTime();
 
@@ -228,20 +229,25 @@ public class JaccardSimilarityQuery {
 					@Override
 					public Tuple2<Double, List<Integer>> call(List<Integer> customerKey) throws Exception {
 
-						// PartID's for Query Customer
-						List<Integer> queryListOfPartsIds = 
-						    new ArrayList<Integer>();
 						
 						// PartID's for this customer TODO: get the values
 						List<Integer> customerListOfPartsIds = 
 						    new ArrayList<Integer>();
-						
+												
 						// Common PartID's 
 						List<Integer> commonPartsIds = 
-							    new ArrayList<Integer>();						
+							    new ArrayList<Integer>();
+						
+						// sort both lists to speed up lookups
+						// TODO: this still can be optimized further
+						Collections.sort(customerListOfPartsIds);						
+						Collections.sort(commonPartsIds);						
 															
 						int countInCommon=0;
 						//iterates over the items in an order
+						int posInQueryList = 0;
+						int posInThisList = 0;
+				
 						for (Integer partKey : customerListOfPartsIds) {
 							
 							// counts the number of keys that are common to both lists
