@@ -220,15 +220,16 @@ public class JaccardSimilarityQuery {
 
 		// returns the customerKey and a tuple <SimilarityScore, and the list of PartID's>
 		// for each customer
+		
+//		flatMapToPair(PairFlatMapFunction<T,K2,V2> f) 
 		JavaPairRDD<Integer, Tuple2<Double, List<Integer>>> jaccardSimilarityScore = 
-				allPartsIDsPerCustomer.foreach(new Function2<List<Integer>,
-													// the Customer Query
-										   			     Tuple2<Double, List<Integer>>>() {	// Value returned
+				allPartsIDsPerCustomer.foreach(new VoidFunction<JavaPairRDD>() {	// Value returned: A List of all parts Id's
+												// from all orders for each customer
 		
 					private static final long serialVersionUID = -1932241861741271488L;
 		
 					@Override
-					public Tuple2<Double, List<Integer>> call(List<Integer> customerKey) throws Exception {
+					public Iterator<Tuple2<Double, List<Integer>>> call(Integer value) throws Exception {
 
 						
 						// PartID's for this customer TODO: get the values
@@ -256,6 +257,7 @@ public class JaccardSimilarityQuery {
 												
 						while(countFirst < queryListOfPartsIds.size() && countSecond < customerListOfPartsIds.size()){
 							
+							// if the first entry is larger than the second
 							if (queryListOfPartsIds.get(countFirst) > customerListOfPartsIds.get(countSecond)){
 								
 								totalUniquePartsID.add(customerListOfPartsIds.get(countSecond));
@@ -284,20 +286,20 @@ public class JaccardSimilarityQuery {
 						// now add the not in common entries for the largest list
 						if (queryListOfPartsIds.size() > customerListOfPartsIds.size()){
 							
-						    for (int i=0 ; i< queryListOfPartsIds.size(); i++)
+						    for (int i=countFirst ; i< queryListOfPartsIds.size(); i++)
 						    	totalUniquePartsID.add(queryListOfPartsIds.get(i));
 						    
 						} else{
 							
-						    for (int i=0 ; i< customerListOfPartsIds.size(); i++)
+						    for (int i=countSecond ; i< customerListOfPartsIds.size(); i++)
 						    	totalUniquePartsID.add(customerListOfPartsIds.get(i));
 						    
-						}						
+						}					
 						
 						Double similarityValue = new Double((double)(inCommon.size() / totalUniquePartsID.size()));
 						
 						// adds the similarity along with part ID's purchased by this Customer
-						return(new Tuple2<Double, List<Integer>>(similarityValue, customerListOfPartsIds));
+						return((new Tuple2<Double, List<Integer>>(similarityValue, customerListOfPartsIds)).iterator());
 						
 					}
 				});
