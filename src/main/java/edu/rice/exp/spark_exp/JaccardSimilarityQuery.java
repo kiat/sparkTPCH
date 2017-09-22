@@ -223,20 +223,16 @@ public class JaccardSimilarityQuery {
 		
 //		flatMapToPair(PairFlatMapFunction<T,K2,V2> f) 
 		JavaPairRDD<Integer, Tuple2<Double, List<Integer>>> jaccardSimilarityScore = 
-				allPartsIDsPerCustomer.flatMapToPair(new PairFlatMapFunction<Tuple2<Integer, List<Integer>>,
-													Integer,
-													Tuple2<Double, List<Integer>>>() {	// Value returned: A List of all parts Id's
-												// from all orders for each customer
+				allPartsIDsPerCustomer.flatMapToPair(new PairFlatMapFunction<Tuple2<Integer, List<Integer>>,	// Type
+													Integer,													// Key Customer.key
+													Tuple2<Double, List<Integer>>>() {							// Returned value
 		
 					private static final long serialVersionUID = -1932241861741271488L;
 		
 					@Override
-					public Iterator<Tuple2<Integer, Tuple2<Double, List<Integer>>>> call(Tuple2<Integer, List<Integer>> value) throws Exception {
-
+					public Iterator<Tuple2<Integer, Tuple2<Double, List<Integer>>>> call(Tuple2<Integer, List<Integer>> item) throws Exception {
 						
-						// PartID's for this customer TODO: get the values
-						List<Integer> customerListOfPartsIds = 
-						    new ArrayList<Integer>();
+						List<Integer> customerListOfPartsIds = item._2; // retrieves the list of parts for this customer
 																		
 						// sort both lists to speed up lookups
 						// TODO: this still can be optimized further
@@ -247,25 +243,28 @@ public class JaccardSimilarityQuery {
 						List<Integer> inCommon = 
 							    new ArrayList<Integer>();
 
-						// will store all PartID's (repeated counts only one)
+						// will store all unique PartID's (repeated counts only one)
 						List<Integer> totalUniquePartsID = 
 							    new ArrayList<Integer>();	
 						
+						// sort the Lists
 						Collections.sort(queryListOfPartsIds);						
 						Collections.sort(customerListOfPartsIds);
 						
 						int countFirst = 0;
 						int countSecond = 0;
-												
+
+						// iterates over the list of parts (stops when the shortest one is completed)
 						while(countFirst < queryListOfPartsIds.size() && countSecond < customerListOfPartsIds.size()){
 							
-							// if the first entry is larger than the second
+							// if the first entry is larger than the second, this is a unique value
 							if (queryListOfPartsIds.get(countFirst) > customerListOfPartsIds.get(countSecond)){
 								
 								totalUniquePartsID.add(customerListOfPartsIds.get(countSecond));
 								countSecond++;
 								
 							} else {
+								// if both entries are equal, put it in the inCommon List
 								if (queryListOfPartsIds.get(countFirst) == customerListOfPartsIds.get(countSecond)){
 									
 									inCommon.add(queryListOfPartsIds.get(countFirst));
@@ -279,25 +278,22 @@ public class JaccardSimilarityQuery {
 									totalUniquePartsID.add(queryListOfPartsIds.get(countFirst));
 									countFirst++;	
 									
-								}
-								
-							}
-							
+								}								
+							}							
 						}		
 						
 						// now add the not in common entries for the largest list
-						if (queryListOfPartsIds.size() > customerListOfPartsIds.size()){
+						if (queryListOfPartsIds.size() > customerListOfPartsIds.size()){							
+							for (int i=countFirst ; i< queryListOfPartsIds.size(); i++)
+						    	totalUniquePartsID.add(queryListOfPartsIds.get(i));						    
 							
-						    for (int i=countFirst ; i< queryListOfPartsIds.size(); i++)
-						    	totalUniquePartsID.add(queryListOfPartsIds.get(i));
-						    
-						} else{
-							
+						} else{							
 						    for (int i=countSecond ; i< customerListOfPartsIds.size(); i++)
-						    	totalUniquePartsID.add(customerListOfPartsIds.get(i));
+						    	totalUniquePartsID.add(customerListOfPartsIds.get(i));						    
 						    
 						}					
 						
+						// compute Jaccard Similarity (number of common values / total number of unique values
 						Double similarityValue = new Double((double)(inCommon.size() / totalUniquePartsID.size()));
 						
 						// adds the similarity along with part ID's purchased by this Customer
@@ -305,7 +301,7 @@ public class JaccardSimilarityQuery {
 								new Tuple2<Double, List<Integer>>(similarityValue, customerListOfPartsIds);
 						// adds the Customer.key
 						Tuple2<Integer, Tuple2<Double, List<Integer>>> outerTuple = 
-								new Tuple2<Integer, Tuple2<Double, List<Integer>>>(new Integer(0), innerTuple);
+								new Tuple2<Integer, Tuple2<Double, List<Integer>>>(item._1, innerTuple);
 						
 						return(outerTuple);
 						
