@@ -3,6 +3,7 @@ package edu.rice.exp.spark_exp;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -115,25 +116,25 @@ public class TopJaccard {
 		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);
 		readFileTime = System.nanoTime();
 
-//		if (warmCache == 1) {
-//
-//			// customerRDD=customerRDD.coalesce(numPartitions);
-//			customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
-//
-//			System.out.println("Get the number of Customers");
-//
-//			// force spark to do the job and load data into RDD
-//			numberOfCustomers = customerRDD.count();
-//
-//			countTimestamp = System.nanoTime();
-//
-//			System.out.println("Number of Customer: " + numberOfCustomers);
-//
-//			// do something else to have the data in memory
-//			numberOfDistinctCustomers = customerRDD.distinct().count();
-//			System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
-//
-//		}
+		// if (warmCache == 1) {
+		//
+		// // customerRDD=customerRDD.coalesce(numPartitions);
+		// customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
+		//
+		// System.out.println("Get the number of Customers");
+		//
+		// // force spark to do the job and load data into RDD
+		// numberOfCustomers = customerRDD.count();
+		//
+		// countTimestamp = System.nanoTime();
+		//
+		// System.out.println("Number of Customer: " + numberOfCustomers);
+		//
+		// // do something else to have the data in memory
+		// numberOfDistinctCustomers = customerRDD.distinct().count();
+		// System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
+		//
+		// }
 
 		// #############################################
 		// #############################################
@@ -145,15 +146,15 @@ public class TopJaccard {
 		// Start the timer
 		startQueryTimestamp = System.nanoTime();
 
-		JavaPairRDD<String, Set<Integer>> soldPartIDs = customerRDD.flatMapToPair(new PairFlatMapFunction<Customer, String, Set<Integer>>() {
+		JavaPairRDD<String, List<Integer>> soldPartIDs = customerRDD.flatMapToPair(new PairFlatMapFunction<Customer, String, List<Integer>>() {
 
 			private static final long serialVersionUID = -1932241861741271488L;
 
 			@Override
-			public Iterator<Tuple2<String, Set<Integer>>> call(Customer customer) throws Exception {
+			public Iterator<Tuple2<String, List<Integer>>> call(Customer customer) throws Exception {
 				List<Order> orders = customer.getOrders();
 
-				List<Tuple2<String, Set<Integer>>> returnList = new ArrayList<Tuple2<String, Set<Integer>>>(orders.size());
+				List<Tuple2<String, List<Integer>>> returnList = new ArrayList<Tuple2<String, List<Integer>>>(orders.size());
 
 				// A List to store partIDs for each Customer
 				Set<Integer> partIDSet = new HashSet<Integer>();
@@ -168,8 +169,12 @@ public class TopJaccard {
 					}
 				}
 
+				// Sorting HashSet using List
+				List<Integer> partIDSortedList = new ArrayList<Integer>(partIDSet);
+				Collections.sort(partIDSortedList);
+
 				// now add PartIds
-				returnList.add(new Tuple2<String, Set<Integer>>(customer.getName(), partIDSet));
+				returnList.add(new Tuple2<String, List<Integer>>(customer.getName(), partIDSortedList));
 
 				return returnList.iterator();
 
@@ -177,11 +182,14 @@ public class TopJaccard {
 
 		});
 
-		 List<Tuple2<String, Set<Integer>>> took5= soldPartIDs.take(5);
-		 
-		 System.out.println(took5);
-		 
-		 
+		List<Tuple2<String, List<Integer>>> took10 = soldPartIDs.take(10);
+
+		
+		
+		for (Tuple2<String, List<Integer>> tuple2 : took10) {
+			System.out.println(tuple2);
+
+		}
 
 		// @Override
 		// public Iterator<Tuple2<String, Tuple2<String, Integer>>> call(Customer customer) throws Exception {
