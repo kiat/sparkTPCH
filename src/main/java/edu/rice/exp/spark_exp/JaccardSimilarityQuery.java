@@ -215,6 +215,7 @@ public class JaccardSimilarityQuery {
 				}
 			});
 		
+		
 		// Now, let's compute Jaccard Similarity
 
 		// returns the customerKey and a tuple <SimilarityScore, and the list of PartID's>
@@ -233,49 +234,70 @@ public class JaccardSimilarityQuery {
 						// PartID's for this customer TODO: get the values
 						List<Integer> customerListOfPartsIds = 
 						    new ArrayList<Integer>();
-												
-						// Common PartID's 
-						List<Integer> commonPartsIds = 
-							    new ArrayList<Integer>();
-						
+																		
 						// sort both lists to speed up lookups
 						// TODO: this still can be optimized further
 						Collections.sort(customerListOfPartsIds);						
-						Collections.sort(commonPartsIds);						
-															
-						int countInCommon=0;
-						//iterates over the items in an order
-						int posInQueryList = 0;
-						int posInThisList = 0;
-				
-						for (Integer partKey : customerListOfPartsIds) {
+						Collections.sort(queryListOfPartsIds);
+						
+						// will store the common PartID's
+						List<Integer> inCommon = 
+							    new ArrayList<Integer>();
+
+						// will store all PartID's (repeated counts only one)
+						List<Integer> totalUniquePartsID = 
+							    new ArrayList<Integer>();	
+						
+						Collections.sort(queryListOfPartsIds);						
+						Collections.sort(customerListOfPartsIds);
+						
+						int countFirst = 0;
+						int countSecond = 0;
+												
+						while(countFirst < queryListOfPartsIds.size() && countSecond < customerListOfPartsIds.size()){
 							
-							// counts the number of keys that are common to both lists
-							if (queryListOfPartsIds.contains(partKey) == true){
-								countInCommon++;
-								commonPartsIds.add(partKey);
-							}
+							if (queryListOfPartsIds.get(countFirst) > customerListOfPartsIds.get(countSecond)){
 								
-						}
-
-						// total number of unique ID;s
-						int countUnique = 0;
-
-						// now counts the number of keys that are unique in the
-						// this customer's query list
-						for (Integer partKey : customerListOfPartsIds) {								
-							if (commonPartsIds.contains(partKey) == false) countUnique++;									
-						}
+								totalUniquePartsID.add(customerListOfPartsIds.get(countSecond));
+								countSecond++;
+								
+							} else {
+								if (queryListOfPartsIds.get(countFirst) == customerListOfPartsIds.get(countSecond)){
+									
+									inCommon.add(queryListOfPartsIds.get(countFirst));
+									totalUniquePartsID.add(queryListOfPartsIds.get(countFirst));
+									
+									countSecond++;
+									countFirst++;
+									
+								} else {
+									
+									totalUniquePartsID.add(queryListOfPartsIds.get(countFirst));
+									countFirst++;	
+									
+								}
+								
+							}
+							
+						}		
 						
-						// now counts the number of keys that are unique in the
-						// Customer query list
-						for (Integer partKey : queryListOfPartsIds) {								
-							if (commonPartsIds.contains(partKey) == false) countUnique++;									
-						}							
+						// now add the not in common entries for the largest list
+						if (queryListOfPartsIds.size() > customerListOfPartsIds.size()){
+							
+						    for (int i=0 ; i< queryListOfPartsIds.size(); i++)
+						    	totalUniquePartsID.add(queryListOfPartsIds.get(i));
+						    
+						} else{
+							
+						    for (int i=0 ; i< customerListOfPartsIds.size(); i++)
+						    	totalUniquePartsID.add(customerListOfPartsIds.get(i));
+						    
+						}						
 						
-						Double similarityValue = new Double((double)countInCommon / (double)countUnique);
-						// adds the similarity along with parts for this Customer
-						return(new Tuple2<Double, List<Integer>>(similarityValue, commonPartsIds));
+						Double similarityValue = new Double((double)(inCommon.size() / totalUniquePartsID.size()));
+						
+						// adds the similarity along with part ID's purchased by this Customer
+						return(new Tuple2<Double, List<Integer>>(similarityValue, customerListOfPartsIds));
 						
 					}
 				});
