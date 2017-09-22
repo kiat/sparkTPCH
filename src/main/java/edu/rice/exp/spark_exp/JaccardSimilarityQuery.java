@@ -6,9 +6,11 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.Function;
@@ -41,9 +43,19 @@ import edu.rice.dmodel.Order;
  * parts in both sets (duplicated counted once).
  *  
  * First, for each customer we obtain a list of unique parts 
- * ordered for all orders.
+ * ordered for all orders, returning a pair of:
  * 
- * Second: 
+ * Tuple2< customer.key, List<partId's> >
+ * 
+ * Second, for each customer we calculate the Jaccard Similarity
+ * against the list of parts from the query, returning a pair of:
+ * 
+ * Tuple2< similarity.value, List<partId's>>, similarity.value
+ * closer to 1 the  lists are more similar, closer to 0, the lists
+ * are less similar.
+ * 
+ * Third, we create a priority queue sorting by similarity.value
+ * and return the top 10 of the list.
  *
  */
 
@@ -82,12 +94,22 @@ public class JaccardSimilarityQuery {
 		// 1 = the query includes count and count.distinct (default)
 		int warmCache = 1;
 
-		if (args.length > 0)
-			NUMBER_OF_COPIES = Integer.parseInt(args[0]);
-
 		if (args.length > 1)
-			fileScale = args[1];
+			NUMBER_OF_COPIES = Integer.parseInt(args[1]);
 
+		String s = args[1];
+		String[] listOfParts = s.split(",");
+
+		// Creates a List<Integer> with the PartID's to be used for 
+		// the query
+		List<Integer> queryListOfPartsIds = 
+		    new ArrayList<Integer>(listOfParts.length);		
+
+		for (int i = 0; i < listOfParts.length; i++) {
+			int tmp = Integer.parseInt(listOfParts[i].replaceAll(" ", ""));
+			queryListOfPartsIds.add(tmp);
+		}
+		
 		if (args.length > 2)
 			numPartitions = Integer.parseInt(args[2]);
 
@@ -123,12 +145,7 @@ public class JaccardSimilarityQuery {
 		conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
 
 		conf.set("fs.local.block.size", "268435456");
-		
-		// Creates a List<Integer> with the PartID's I want to use for 
-		// computing JaccardSimilarity TODO: read from arg
-		List<Integer> queryListOfPartsIds = 
-		    new ArrayList<Integer>();		
-		
+						
 		// Get the initial time
 		startTime = System.nanoTime();
 
@@ -309,8 +326,9 @@ public class JaccardSimilarityQuery {
 		// Take the top-10 Review this b/c it sorts each
 		// partition and we have to make sure it gets a global 
 		// one.
-		jaccardSimilarityScore.sortByKey().take(10);		
 		
+		jaccardSimilarityScore.sortByKey().take(10);		
+				
 		int finalResultCount=0;
 		
 		// Stop the timer
