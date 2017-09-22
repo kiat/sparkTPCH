@@ -69,6 +69,7 @@ public class MyKryoRegistrator implements KryoRegistrator, Serializable {
 
 		kryo.register(java.util.ArrayList.class);
 		kryo.register(java.util.HashMap.class);
+		kryo.register(java.util.HashSet.class);
 
 		// register my classes. 
 		kryo.register(edu.rice.dmodel.Part.class);
@@ -91,6 +92,9 @@ public class MyKryoRegistrator implements KryoRegistrator, Serializable {
 		
 		doRegistration(kryo, "org.apache.spark.sql.catalyst.InternalRow");
 		doRegistration(kryo, "org.apache.spark.sql.catalyst.expressions.UnsafeRow");
+		
+		
+		
 
 		
 		
