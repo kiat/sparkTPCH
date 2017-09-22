@@ -223,13 +223,15 @@ public class JaccardSimilarityQuery {
 		
 //		flatMapToPair(PairFlatMapFunction<T,K2,V2> f) 
 		JavaPairRDD<Integer, Tuple2<Double, List<Integer>>> jaccardSimilarityScore = 
-				allPartsIDsPerCustomer.foreach(new VoidFunction<JavaPairRDD>() {	// Value returned: A List of all parts Id's
+				allPartsIDsPerCustomer.flatMapToPair(new PairFlatMapFunction<Tuple2<Integer, List<Integer>>,
+													Integer,
+													Tuple2<Double, List<Integer>>>() {	// Value returned: A List of all parts Id's
 												// from all orders for each customer
 		
 					private static final long serialVersionUID = -1932241861741271488L;
 		
 					@Override
-					public Iterator<Tuple2<Double, List<Integer>>> call(Integer value) throws Exception {
+					public Tuple2<Integer, Tuple2<Double, List<Integer>>> call(Tuple2<Integer, List<Integer>> value) throws Exception {
 
 						
 						// PartID's for this customer TODO: get the values
@@ -299,7 +301,11 @@ public class JaccardSimilarityQuery {
 						Double similarityValue = new Double((double)(inCommon.size() / totalUniquePartsID.size()));
 						
 						// adds the similarity along with part ID's purchased by this Customer
-						return((new Tuple2<Double, List<Integer>>(similarityValue, customerListOfPartsIds)).iterator());
+						Tuple2<Double, List<Integer>> innerTuple = new Tuple2<Double, List<Integer>>(similarityValue, customerListOfPartsIds);
+						Tuple2<Integer, Tuple2<Double, List<Integer>>> outerTuple = 
+								new Tuple2<Integer, Tuple2<Double, List<Integer>>>(new Integer(0), innerTuple);
+						
+						return(outerTuple);
 						
 					}
 				});
