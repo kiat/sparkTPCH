@@ -257,58 +257,70 @@ public class JaccardSimilarityQuery {
 				List<Integer> inCommon = 
 					    new ArrayList<Integer>();
 
-				// will store all unique PartID's (repeated counts only one)
+				// will store all PartID's (repeated counts only one)
 				List<Integer> totalUniquePartsID = 
 					    new ArrayList<Integer>();	
 				
-				// sort the Lists
 				Collections.sort(queryListOfPartsIds);						
 				Collections.sort(customerListOfPartsIds);
 				
-				int countFirst = 0;
-				int countSecond = 0;
+				int indexQueryList = 0;
+				int indexCustoList = 0;
 
-				// iterates over the list of parts (stops when the shortest one is completed)
-				while(countFirst < queryListOfPartsIds.size() && countSecond < customerListOfPartsIds.size()){
+				// iterates while the end of the shortest list is found
+				while(indexQueryList < queryListOfPartsIds.size() && 
+					  indexCustoList < customerListOfPartsIds.size()){
 					
-					// if the first entry is larger than the second, this is a unique value
-					if (queryListOfPartsIds.get(countFirst) > customerListOfPartsIds.get(countSecond)){
+					// if the value in the Query List is greater than the 
+					// one in the Customer List, this is not a common part
+					if (queryListOfPartsIds.get(indexQueryList) > customerListOfPartsIds.get(indexCustoList)){
 						
-						totalUniquePartsID.add(customerListOfPartsIds.get(countSecond));
-						countSecond++;
+						totalUniquePartsID.add(customerListOfPartsIds.get(indexCustoList));
+						// move index in Customer List to the next entry
+						indexCustoList++;
 						
 					} else {
-						// if both entries are equal, put it in the inCommon List
-						if (queryListOfPartsIds.get(countFirst) == customerListOfPartsIds.get(countSecond)){
+						// if both values in the Query List and Customer List are equal
+						// this is a common part					
+						if (queryListOfPartsIds.get(indexQueryList) == customerListOfPartsIds.get(indexCustoList)){
 							
-							inCommon.add(queryListOfPartsIds.get(countFirst));
-							totalUniquePartsID.add(queryListOfPartsIds.get(countFirst));
+							inCommon.add(queryListOfPartsIds.get(indexQueryList));
+							totalUniquePartsID.add(queryListOfPartsIds.get(indexQueryList));
 							
-							countSecond++;
-							countFirst++;
+							// move index in both Lists to the next entry
+							indexCustoList++;
+							indexQueryList++;
 							
 						} else {
 							
-							totalUniquePartsID.add(queryListOfPartsIds.get(countFirst));
-							countFirst++;	
+							// if the value in the Query List is lesser than the 
+							// one in the Customer List, this is not a common part 
+							totalUniquePartsID.add(queryListOfPartsIds.get(indexQueryList));
+							// move index in Query List to the next entry
+							indexQueryList++;	
 							
-						}								
-					}							
+						}					
+					}				
 				}		
 				
 				// now add the not in common entries for the largest list
-				if (queryListOfPartsIds.size() > customerListOfPartsIds.size()){							
-					for (int i=countFirst ; i< queryListOfPartsIds.size(); i++)
-				    	totalUniquePartsID.add(queryListOfPartsIds.get(i));						    
+				if (queryListOfPartsIds.size() > customerListOfPartsIds.size()){
 					
-				} else{							
-				    for (int i=countSecond ; i< customerListOfPartsIds.size(); i++)
-				    	totalUniquePartsID.add(customerListOfPartsIds.get(i));						    
+				    for (int i=indexQueryList; i< queryListOfPartsIds.size(); i++)
+				    	totalUniquePartsID.add(queryListOfPartsIds.get(i));
 				    
-				}					
+				} else{
+					
+				    for (int i=indexCustoList; i< customerListOfPartsIds.size(); i++)
+				    	totalUniquePartsID.add(customerListOfPartsIds.get(i));
+				    
+				}						
 				
-				// compute Jaccard Similarity (number of common values / total number of unique values
-				Double similarityValue = new Double((double)(inCommon.size() / totalUniquePartsID.size()));
+				Double similarityValue = new Double(0.0);
+
+				// To avoid divide by zero 
+				if (inCommon.size()==0 && totalUniquePartsID.size()==0)
+					 similarityValue = new Double((double)(inCommon.size() / totalUniquePartsID.size()));
 				
 				// adds the similarity along with part ID's purchased by this Customer
 				Tuple2<Double, List<Integer>> innerTuple = 
