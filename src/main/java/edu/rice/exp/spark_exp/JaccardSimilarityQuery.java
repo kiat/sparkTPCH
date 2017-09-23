@@ -366,7 +366,7 @@ public class JaccardSimilarityQuery {
 		// similarity score.
 		// TODO: verify that this works as intended
 		
-		jaccardSimilarityScore.top(topKValue);		
+		//jaccardSimilarityScore.top(topKValue);		
 
 //		jaccardSimilarityScore.foreach(VoidFunction<Tuple2<Double, Tuple2<Integer,List<Integer>>>>(){
 //	
