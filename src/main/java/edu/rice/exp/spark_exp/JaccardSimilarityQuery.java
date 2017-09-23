@@ -1,6 +1,8 @@
 package edu.rice.exp.spark_exp;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -26,6 +28,7 @@ import edu.rice.dmodel.Customer;
 import edu.rice.dmodel.LineItem;
 import edu.rice.dmodel.MyKryoRegistrator;
 import edu.rice.dmodel.Order;
+import edu.rice.dmodel.Part;
 
 /**
  * This is a class for computing a Top-K Similarity Query using
@@ -79,9 +82,9 @@ public class JaccardSimilarityQuery {
 		double queryTime = 0; 			// time to run the query (doesn't include data load)
 		double elapsedTotalTime = 0; 	// total elapsed time
 
-		// define the number of partitions
+		// what top K elements to include in query
 		// can be overwritten by the 3rd command line arg
-		int numPartitions = 8;
+		int topKValue = 10;
 
 		int NUMBER_OF_COPIES = 0;// number of Customers multiply X 2^REPLICATION_FACTOR
 
@@ -97,8 +100,20 @@ public class JaccardSimilarityQuery {
 		if (args.length > 0)
 			NUMBER_OF_COPIES = Integer.parseInt(args[0]);
 
-		String s = args[1];
-		String[] listOfParts = s.split(",");
+		String inputQueryFile = args[1];
+
+		String[] listOfParts = null;
+		
+		try (BufferedReader br = new BufferedReader(new FileReader(inputQueryFile))) {
+			String line;
+			while ((line = br.readLine()) != null) {
+				listOfParts = line.split(",");
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}		
 
 		// Creates a List<Integer> with the PartID's to be used for 
 		// the query
@@ -106,12 +121,12 @@ public class JaccardSimilarityQuery {
 		    new ArrayList<Integer>(listOfParts.length);		
 
 		for (int i = 0; i < listOfParts.length; i++) {
-			int tmp = Integer.parseInt(listOfParts[i].replaceAll(" ", ""));
+			int tmp = Integer.parseInt(listOfParts[i]);
 			queryListOfPartsIds.add(tmp);
 		}
 		
 		if (args.length > 2)
-			numPartitions = Integer.parseInt(args[2]);
+			topKValue = Integer.parseInt(args[2]);
 
 		if (args.length > 3)
 			hdfsNameNodePath = args[3];
@@ -234,17 +249,17 @@ public class JaccardSimilarityQuery {
 		
 		
 		// Now, let's compute Jaccard Similarity
-		// returns the customerKey and a tuple <SimilarityScore, and the list of PartID's>
+		// returns the SimilarityScore and a tuple <Customer.key, and the list of PartID's>
 		// for each customer
-		JavaPairRDD<Integer, Tuple2<Double, List<Integer>>> jaccardSimilarityScore = 
+		JavaPairRDD<Double, Tuple2<Integer, List<Integer>>> jaccardSimilarityScore = 
 				allPartsIDsPerCustomer.flatMapToPair(new PairFlatMapFunction<Tuple2<Integer, List<Integer>>,	// Type of input RDD
-													Integer,													// Key Customer.key
-													Tuple2<Double, List<Integer>>>() {							// Returned value
+													Double,													    // Key: Similarity
+													Tuple2<Integer, List<Integer>>>() {							// Returned value
 		
 			private static final long serialVersionUID = -1932241861741271488L;
 
 			@Override
-			public Iterator<Tuple2<Integer, Tuple2<Double, List<Integer>>>> call(Tuple2<Integer, List<Integer>> item) throws Exception {
+			public Iterator<Tuple2<Double, Tuple2<Integer, List<Integer>>>> call(Tuple2<Integer, List<Integer>> item) throws Exception {
 				
 				List<Integer> customerListOfPartsIds = item._2; // retrieves the list of parts for this customer
 																
@@ -322,19 +337,19 @@ public class JaccardSimilarityQuery {
 				Double similarityValue = new Double(0.0);
 
 				// If at least one of the Lists is empty, the similarity will be
-				// 0 (this precents divided by zero errors)
+				// 0 (this prevents divided by zero errors)
 				if (inCommon.size()==0 || totalUniquePartsID.size()==0)
 					 similarityValue = new Double((double)(inCommon.size() / totalUniquePartsID.size()));
 				
 				// adds the similarity along with part ID's purchased by this Customer
-				Tuple2<Double, List<Integer>> innerTuple = 
-						new Tuple2<Double, List<Integer>>(similarityValue, customerListOfPartsIds);
+				Tuple2<Integer, List<Integer>> innerTuple = 
+						new Tuple2<Integer, List<Integer>>(item._1, customerListOfPartsIds);
 				// adds the Customer.key
-				Tuple2<Integer, Tuple2<Double, List<Integer>>> outerTuple = 
-						new Tuple2<Integer, Tuple2<Double, List<Integer>>>(item._1, innerTuple);
+				Tuple2<Double, Tuple2<Integer, List<Integer>>> outerTuple = 
+						new Tuple2<Double, Tuple2<Integer, List<Integer>>>(similarityValue, innerTuple);
 				
-				List<Tuple2<Integer, Tuple2<Double, List<Integer>>>> returnTuple = 
-					    new ArrayList<Tuple2<Integer, Tuple2<Double, List<Integer>>>>();
+				List<Tuple2<Double, Tuple2<Integer, List<Integer>>>> returnTuple = 
+					    new ArrayList<Tuple2<Double, Tuple2<Integer, List<Integer>>>>();
 				
 				returnTuple.add(outerTuple);
 								
@@ -343,13 +358,18 @@ public class JaccardSimilarityQuery {
 			}
 		});
 		
-		// Sort by key, where the key is the Similarity value
-		// Take the top-10 Review this b/c it sorts each
-		// partition and we have to make sure it gets a global 
-		// one.
+		// Return the top 10 entries in the RDD, the key is the 
+		// similarity score.
+		// TODO: verify that this works as intended
 		
-		jaccardSimilarityScore.sortByKey().take(10);		
-				
+		jaccardSimilarityScore.top(topKValue);		
+
+//		jaccardSimilarityScore.foreach(VoidFunction<Tuple2<Double, Tuple2<Integer,List<Integer>>>>(){
+//	
+//		});
+//	        System.out.println("Part key: "+data._1() + " Similarity: " + data._2() + " " + );
+//	    }); 
+	    
 		int finalResultCount=0;
 		
 		// Stop the timer
@@ -369,12 +389,12 @@ public class JaccardSimilarityQuery {
 
 		// print out the final results
 		if (warmCache == 1)
-			System.out.println("Result Query 1:\nDataset Factor: " + NUMBER_OF_COPIES + "\nNum Part: " + numPartitions + "\nNum Cust: " + numberOfCustomers
+			System.out.println("Result Query 1:\nDataset Factor: " + NUMBER_OF_COPIES + "\ntopKValue: " + topKValue + "\nNum Cust: " + numberOfCustomers
 					+ "\nResult count: " + finalResultCount + "\nReads HDFS time: " + readsHDFSTime + "\nLoad RDD time: " + String.format("%.9f", loadRDDTime)
 					+ "\nTime to count: " + String.format("%.9f", countTime) + "\nQuery time: " + String.format("%.9f", queryTime) + "\nTotal time: "
 					+ String.format("%.9f", elapsedTotalTime) + "\n");
 		else
-			System.out.println("Result Query 1:\nDataset Factor: " + NUMBER_OF_COPIES + "\nNum Part: " + numPartitions + "\nNum Cust: " + numberOfCustomers
+			System.out.println("Result Query 1:\nDataset Factor: " + NUMBER_OF_COPIES + "\ntopKValue: " + topKValue + "\nNum Cust: " + numberOfCustomers
 					+ "\nResult count: " + finalResultCount + "\nReads HDFS time: " + readsHDFSTime + "\nLoad RDD time: " + String.format("%.9f", loadRDDTime)
 					+ "\nQuery time: " + String.format("%.9f", queryTime) + "\nTotal time: " + String.format("%.9f", elapsedTotalTime) + "\n");
 
