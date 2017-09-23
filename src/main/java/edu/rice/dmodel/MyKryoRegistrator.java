@@ -81,7 +81,7 @@ public class MyKryoRegistrator implements KryoRegistrator, Serializable {
 		kryo.register(edu.rice.dmodel.SupplierData.class);
 		kryo.register(edu.rice.dmodel.PartIDCount.class);
 		kryo.register(edu.rice.dmodel.Wrapper.class);
-		
+		kryo.register(edu.rice.exp.spark_exp.JaccardSimilarityQuery.class);						
 
 		kryo.register(byte[][].class);
 
