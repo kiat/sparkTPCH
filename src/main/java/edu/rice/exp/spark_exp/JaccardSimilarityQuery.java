@@ -368,6 +368,9 @@ public class JaccardSimilarityQuery {
 		// TODO: verify that this works as intended
 				
 		jaccardSimilarityScore.top(topKValue, new Comparator<Tuple2<Double, Tuple2<Integer, List<Integer>>>>() {
+			
+			private static final long serialVersionUID = 1610211969496211511L;
+			
 			@Override
 			public int compare(Tuple2<Double, Tuple2<Integer, List<Integer>>> score_1, 
 					           Tuple2<Double, Tuple2<Integer, List<Integer>>> score_2) {
