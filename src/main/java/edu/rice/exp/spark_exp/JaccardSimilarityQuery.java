@@ -367,16 +367,16 @@ public class JaccardSimilarityQuery {
 		// Return the top 10 entries in the RDD, the key is the 
 		// similarity score.
 		// TODO: verify that this works as intended
-		
-		
-		jaccardSimilarityScore.top(topKValue);
-		
-//		top(topKValue, new Comparator<Double>() {
-//			@Override
-//			public int compare(Double o1, Double o2) {
-//				return o2 - o1;
-//			}
-//		});
+				
+		jaccardSimilarityScore.top(topKValue, new Comparator<Tuple2<Double, Tuple2<Integer, List<Integer>>>>() {
+			@Override
+			public int compare(Tuple2<Double, Tuple2<Integer, List<Integer>>> score_1, 
+					           Tuple2<Double, Tuple2<Integer, List<Integer>>> score_2) {
+				if (score_1._1 < score_2._1) return -1;
+				if (score_1._1 > score_2._1) return 1;
+				return 0;
+			}
+		});
 //		jaccardSimilarityScore.foreach(VoidFunction<Tuple2<Double, Tuple2<Integer,List<Integer>>>>(){
 //	
 //		});
