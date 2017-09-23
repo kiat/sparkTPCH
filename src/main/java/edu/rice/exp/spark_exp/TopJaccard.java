@@ -12,7 +12,6 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.VoidFunction;
 
 import edu.rice.dmodel.Customer;
 import edu.rice.dmodel.LineItem;
@@ -174,18 +173,20 @@ public class TopJaccard {
 
 		JavaRDD<Wrapper> myMappedData = customerRDD.map(new Function<Customer, Wrapper>() {
 
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = -7744382435853610996L;
+
 			@Override
 			public Wrapper call(Customer customer) throws Exception {
 
 				List<Order> orders = customer.getOrders();
 
-				// we do nothing if 
-				if(orders.size()==0 || orders==null){
+				// we do nothing if
+				if (orders.size() == 0 || orders == null) {
 					return new Wrapper(customer.getCustkey(), null, 0);
 				}
-				
-				
-				
 
 				// Sorting HashSet using List
 				List<Integer> partIDSortedList = new ArrayList<Integer>(orders.size());
@@ -202,15 +203,13 @@ public class TopJaccard {
 
 				// sort the list
 				Collections.sort(partIDSortedList);
-				
-				
-				
-				//######################
-				//###  QUERY Processing  				
-				//######################				
-				
-				// now we run the query on top of that 
-				
+
+				// ######################
+				// ### QUERY Processing
+				// ######################
+
+				// now we run the query on top of that
+
 				List<Integer> allLines = partIDSortedList;
 				List<Integer> origList = myQuery;
 
@@ -270,48 +269,39 @@ public class TopJaccard {
 
 		});
 
+		List<Wrapper> results = myMappedData.top(10);
 
-		
-		List<Wrapper>  results=myMappedData.top(10); 
-		
 		for (Wrapper wrapper : results) {
 			System.out.println(wrapper);
 		}
-		
-		
-		
-		
 
-		//
-		// int finalResultCount = finalResult._2;
-		//
-		// // Stop the timer
-		// finalTimestamp = System.nanoTime();
-		//
-		// // Calculate elapsed times
-		// // time to load data from hdfs into RDD
-		// loadRDDTime = (startQueryTimestamp - startTime) / 1000000000.0;
-		// // reads file from HDFS time
-		// readsHDFSTime = (readFileTime - startTime) / 1000000000.0;
-		// // query time including loading RDD into memory
-		// countTime = (startQueryTimestamp - countTimestamp) / 1000000000.0;
-		// // query time not including loading RDD into memory
-		// queryTime = (finalTimestamp - startQueryTimestamp) / 1000000000.0;
-		// // total elapsed time
-		// elapsedTotalTime = (finalTimestamp - startTime) / 1000000000.0;
-		//
-		// // print out the final results
-		// if (warmCache == 1)
-		// System.out.println("Result Query 1:\nDataset Factor: " + NUMBER_OF_COPIES + "\nNum Part: " + numPartitions + "\nNum Cust: " + numberOfCustomers
-		// + "\nResult count: " + finalResultCount + "\nReads HDFS time: " + readsHDFSTime + "\nLoad RDD time: " + String.format("%.9f", loadRDDTime)
-		// + "\nTime to count: " + String.format("%.9f", countTime) + "\nQuery time: " + String.format("%.9f", queryTime) + "\nTotal time: "
-		// + String.format("%.9f", elapsedTotalTime) + "\n");
-		// else
-		// System.out.println("Result Query 1:\nDataset Factor: " + NUMBER_OF_COPIES + "\nNum Part: " + numPartitions + "\nNum Cust: " + numberOfCustomers
-		// + "\nResult count: " + finalResultCount + "\nReads HDFS time: " + readsHDFSTime + "\nLoad RDD time: " + String.format("%.9f", loadRDDTime)
-		// + "\nQuery time: " + String.format("%.9f", queryTime) + "\nTotal time: " + String.format("%.9f", elapsedTotalTime) + "\n");
-		//
-		// // Finally stop the Spark context once all is completed
+		// Stop the timer
+		finalTimestamp = System.nanoTime();
+
+		// Calculate elapsed times
+		// time to load data from hdfs into RDD
+		loadRDDTime = (startQueryTimestamp - startTime) / 1000000000.0;
+		// reads file from HDFS time
+		readsHDFSTime = (readFileTime - startTime) / 1000000000.0;
+		// query time including loading RDD into memory
+		countTime = (startQueryTimestamp - countTimestamp) / 1000000000.0;
+		// query time not including loading RDD into memory
+		queryTime = (finalTimestamp - startQueryTimestamp) / 1000000000.0;
+		// total elapsed time
+		elapsedTotalTime = (finalTimestamp - startTime) / 1000000000.0;
+
+//		// print out the final results
+//		if (warmCache == 1)
+//			System.out.println("Result Query 1:\nDataset Factor: " + NUMBER_OF_COPIES + "\nNum Part: " + numPartitions + "\nNum Cust: " + numberOfCustomers
+//					+ "\nResult count: " + finalResultCount + "\nReads HDFS time: " + readsHDFSTime + "\nLoad RDD time: " + String.format("%.9f", loadRDDTime)
+//					+ "\nTime to count: " + String.format("%.9f", countTime) + "\nQuery time: " + String.format("%.9f", queryTime) + "\nTotal time: "
+//					+ String.format("%.9f", elapsedTotalTime) + "\n");
+//		else
+//			System.out.println("Result Query 1:\nDataset Factor: " + NUMBER_OF_COPIES + "\nNum Part: " + numPartitions + "\nNum Cust: " + numberOfCustomers
+//					+ "\nResult count: " + finalResultCount + "\nReads HDFS time: " + readsHDFSTime + "\nLoad RDD time: " + String.format("%.9f", loadRDDTime)
+//					+ "\nQuery time: " + String.format("%.9f", queryTime) + "\nTotal time: " + String.format("%.9f", elapsedTotalTime) + "\n");
+
+		// Finally stop the Spark context once all is completed
 
 		sc.stop();
 
