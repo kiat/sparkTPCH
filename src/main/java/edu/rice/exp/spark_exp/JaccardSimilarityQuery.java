@@ -66,18 +66,18 @@ public class JaccardSimilarityQuery {
 		// can be overwritten by the fourth command line arg
 		String hdfsNameNodePath = "hdfs://10.134.96.100:9000/user/kia/customer-";
 
-		long startTime = 0; // timestamp from the beginning
-		long readFileTime = 0; // timestamp after reading from HDFS
-		long countTimestamp = 0; // timestamp after count that reads
-									// from disk into RDD
-		long startQueryTimestamp = 0; // timestamp before query begins
-		long finalTimestamp = 0; // timestamp final
+		long startTime = 0; 			// timestamp from the beginning
+		long readFileTime = 0; 			// timestamp after reading from HDFS
+		long countTimestamp = 0; 		// timestamp after count that reads
+										// from disk into RDD
+		long startQueryTimestamp = 0; 	// timestamp before query begins
+		long finalTimestamp = 0; 		// timestamp final
 
-		double readsHDFSTime = 0; // time to read from HDFS (not including count + count.distinct)
-		double loadRDDTime = 0; // time to load RDD in memory (includes count + count.distinct)
-		double countTime = 0; // time to count (includes only count)
-		double queryTime = 0; // time to run the query (doesn't include data load)
-		double elapsedTotalTime = 0; // total elapsed time
+		double readsHDFSTime = 0; 		// time to read from HDFS (not including count + count.distinct)
+		double loadRDDTime = 0; 		// time to load RDD in memory (includes count + count.distinct)
+		double countTime = 0; 			// time to count (includes only count)
+		double queryTime = 0; 			// time to run the query (doesn't include data load)
+		double elapsedTotalTime = 0; 	// total elapsed time
 
 		// define the number of partitions
 		// can be overwritten by the 3rd command line arg
@@ -94,8 +94,8 @@ public class JaccardSimilarityQuery {
 		// 1 = the query includes count and count.distinct (default)
 		int warmCache = 1;
 
-		if (args.length > 1)
-			NUMBER_OF_COPIES = Integer.parseInt(args[1]);
+		if (args.length > 0)
+			NUMBER_OF_COPIES = Integer.parseInt(args[0]);
 
 		String s = args[1];
 		String[] listOfParts = s.split(",");
@@ -267,12 +267,12 @@ public class JaccardSimilarityQuery {
 				int indexQueryList = 0;
 				int indexCustoList = 0;
 
-				// iterates while the end of the shortest list is found
+				// iterates until the end of the shortest list is reached
 				while(indexQueryList < queryListOfPartsIds.size() && 
 					  indexCustoList < customerListOfPartsIds.size()){
 					
-					// if the value in the Query List is greater than the 
-					// one in the Customer List, this is not a common part
+					// if the value in the current entry in Query List is greater 
+					// than the one in the Customer List, this is a unique partId
 					if (queryListOfPartsIds.get(indexQueryList) > customerListOfPartsIds.get(indexCustoList)){
 						
 						totalUniquePartsID.add(customerListOfPartsIds.get(indexCustoList));
@@ -280,11 +280,13 @@ public class JaccardSimilarityQuery {
 						indexCustoList++;
 						
 					} else {
-						// if both values in the Query List and Customer List are equal
-						// this is a common part					
+						// if both values in the current Query List and Customer List 
+						// are equal, this is a common partId					
 						if (queryListOfPartsIds.get(indexQueryList) == customerListOfPartsIds.get(indexCustoList)){
 							
 							inCommon.add(queryListOfPartsIds.get(indexQueryList));
+							// but a common part is also unique, so put it in the 
+							// corresponding list
 							totalUniquePartsID.add(queryListOfPartsIds.get(indexQueryList));
 							
 							// move index in both Lists to the next entry
@@ -292,8 +294,7 @@ public class JaccardSimilarityQuery {
 							indexQueryList++;
 							
 						} else {
-							
-							// if the value in the Query List is lesser than the 
+							// if the value in the current Query List is less than the 
 							// one in the Customer List, this is not a common part 
 							totalUniquePartsID.add(queryListOfPartsIds.get(indexQueryList));
 							// move index in Query List to the next entry
@@ -303,7 +304,9 @@ public class JaccardSimilarityQuery {
 					}				
 				}		
 				
-				// now add the not in common entries for the largest list
+				// we will iterate from the last index in the shortest List
+				// until the end of the largest List, all entries are unique
+				// partID's
 				if (queryListOfPartsIds.size() > customerListOfPartsIds.size()){
 					
 				    for (int i=indexQueryList; i< queryListOfPartsIds.size(); i++)
@@ -318,8 +321,9 @@ public class JaccardSimilarityQuery {
 				
 				Double similarityValue = new Double(0.0);
 
-				// To avoid divide by zero 
-				if (inCommon.size()==0 && totalUniquePartsID.size()==0)
+				// If at least one of the Lists is empty, the similarity will be
+				// 0 (this precents divided by zero errors)
+				if (inCommon.size()==0 || totalUniquePartsID.size()==0)
 					 similarityValue = new Double((double)(inCommon.size() / totalUniquePartsID.size()));
 				
 				// adds the similarity along with part ID's purchased by this Customer
