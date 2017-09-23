@@ -179,6 +179,14 @@ public class TopJaccard {
 
 				List<Order> orders = customer.getOrders();
 
+				// we do nothing if 
+				if(orders.size()==0 || orders==null){
+					return new Wrapper(customer.getCustkey(), null, 0);
+				}
+				
+				
+				
+
 				// Sorting HashSet using List
 				List<Integer> partIDSortedList = new ArrayList<Integer>(orders.size());
 
@@ -194,35 +202,16 @@ public class TopJaccard {
 
 				// sort the list
 				Collections.sort(partIDSortedList);
-
-				// make a new wrapper object and return
-				return new Wrapper(customer.getCustkey(), partIDSortedList);
-			}
-
-		});
-
-		//
-		// List<Wrapper> took10 = myMappedData.take(10);
-		//
-		// for (Wrapper tuple2 : took10) {
-		// System.out.println(tuple2);
-		//
-		// }
-
-		myMappedData.foreach(new VoidFunction<Wrapper>() {
-
-			private static final long serialVersionUID = 4710286206160441612L;
-
-			@Override
-			public void call(Wrapper myGuy) throws Exception {
-
-				if (myGuy.getPartIDs() == null)
-					return;
-
-				if (myGuy.getPartIDs().size() == 0)
-					return;
-
-				List<Integer> allLines = myGuy.getPartIDs();
+				
+				
+				
+				//######################
+				//###  QUERY Processing  				
+				//######################				
+				
+				// now we run the query on top of that 
+				
+				List<Integer> allLines = partIDSortedList;
 				List<Integer> origList = myQuery;
 
 				// will store the common PartID's
@@ -275,37 +264,23 @@ public class TopJaccard {
 
 				double similarityValue = ((double) inCommon.size()) / (double) (numUnique + numUniqueInQuery - inCommon.size());
 
-				// set the score for my guy
-				myGuy.setScore(similarityValue);
-
-				// if( inCommon.size()!= 0)
-				// System.out.println(" inCommon= " + inCommon.size() + " numUnique= " + numUnique + " numUniqueInQuery= " + numUniqueInQuery
-				// +" similarityValue= "+similarityValue);
-
-				// add my guy to the priorityQueue.
-
-				
-
-				  synchronized(topKQueue){
-					  
-						topKQueue.offer(myGuy);
-
-//						if(topKQueue.size() > 10){
-//							Object[] tmp= topKQueue.toArray();
-//							topKQueue.remove(tmp[10]);
-//						}
-							
-						
-				    }
-		
-
+				// make a new wrapper object and return
+				return new Wrapper(customer.getCustkey(), partIDSortedList, similarityValue);
 			}
 
 		});
 
-		for (int i = 0; i < 10; i++) {
-			System.out.println(topKQueue.poll());
+
+		
+		List<Wrapper>  results=myMappedData.top(10); 
+		
+		for (Wrapper wrapper : results) {
+			System.out.println(wrapper);
 		}
+		
+		
+		
+		
 
 		//
 		// int finalResultCount = finalResult._2;

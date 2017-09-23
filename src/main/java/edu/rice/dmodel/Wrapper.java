@@ -22,10 +22,11 @@ public class Wrapper implements Serializable, Comparable<Wrapper> {
 		super();
 	}
 
-	public Wrapper(Integer customerID, List<Integer> partIDs) {
+	public Wrapper(Integer customerID, List<Integer> partIDs, double score ) {
 		super();
 		this.customerID = customerID;
 		this.partIDs = partIDs;
+		this.score=score;
 	}
 
 	public Integer getCustomerID() {
@@ -54,9 +55,9 @@ public class Wrapper implements Serializable, Comparable<Wrapper> {
 
 	@Override
 	public int compareTo(Wrapper o) {
-		if (o.getScore() < this.getScore())
+		if (this.getScore() < o.getScore())
 			return -1;
-		if (o.getScore() > this.getScore())
+		if (this.getScore() > o.getScore())
 			return 1;
 		return 0;
 	}
