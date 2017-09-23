@@ -24,25 +24,29 @@ public class TopJaccard {
 
 	// the capacity of priority queue is 10
 	public static PriorityQueue<Wrapper> topKQueue;
-
-	public static List<Integer> myQuery;
 	public static int numUniqueInQuery = 0;
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-		int[] thisIsAnIntArray = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 20, 24, 27 };
 
-		myQuery = new ArrayList<Integer>();
+		// this is our query
+		int[] thisIsAnIntArray = {90, 342, 528, 678, 957, 1001, 1950, 2022, 2045, 2345, 3238, 4456, 5218, 5301, 5798, 6001, 6119, 6120, 6153, 6670, 6715,
+				6896, 7000, 7109, 7400, 7542, 8000, 10024, 10030, 10316, 10400, 10534, 11000, 11635, 11700, 11884, 11900, 12413, 14511, 15000, 15594, 15700,
+				15760, 16000, 16976, 17000, 17002, 17003, 17035, 18437, 19000, 20848, 21000, 22004, 22202, 22203, 22339, 22400, 23984, 24000, 24180, 25000,
+				26284, 27000, 27182, 28000, 28268, 28500, 28530, 29000, 31060, 31500, 32388, 32400, 32428, 32774, 33000, 33023, 34000, 34055, 34300, 34385,
+				36745, 37000, 37232, 37500, 37990, 38000, 3982 };
+
+		List<Integer> myQuery = new ArrayList<Integer>();
 		topKQueue = new PriorityQueue<Wrapper>(10);
 
 		for (int i : thisIsAnIntArray) {
-			TopJaccard.myQuery.add(i);
+			myQuery.add(i);
 		}
 
 		System.out.println(myQuery);
 
 		int m_index = 0;
 		while (true) {
-			if (m_index == TopJaccard.myQuery.size())
+			if (m_index == myQuery.size())
 				break;
 			// loop to the last repeated value
 			while (m_index + 1 < myQuery.size() && myQuery.get(m_index) == myQuery.get(m_index + 1)) {
@@ -79,7 +83,7 @@ public class TopJaccard {
 		int NUMBER_OF_COPIES = 0;// number of Customers multiply X 2^REPLICATION_FACTOR
 
 		// TODO this is not used and should be removed
-		String fileScale = "0.1";
+		String fileScale = "0.2";
 
 		// can be overwritten by the 4rd command line arg
 		// 0 = the query time doesn't include count nor count.distinct
@@ -179,102 +183,35 @@ public class TopJaccard {
 			private static final long serialVersionUID = -7744382435853610996L;
 
 			@Override
-			public Wrapper call(Customer customer) throws Exception {
-
-				List<Order> orders = customer.getOrders();
-
-				// we do nothing if
-				if (orders.size() == 0 || orders == null) {
-					return new Wrapper(customer.getCustkey(), null, 0);
-				}
-
-				// Sorting HashSet using List
-				List<Integer> partIDSortedList = new ArrayList<Integer>(orders.size());
-
-				// iterates over all orders for a customer
-				for (Order order : orders) {
-					List<LineItem> lineItems = order.getLineItems();
-
-					// iterates over the items in an order
-					for (LineItem lineItem : lineItems) {
-						partIDSortedList.add(lineItem.getPart().getPartID());
-					}
-				}
-
-				// sort the list
-				Collections.sort(partIDSortedList);
-
-				// ######################
-				// ### QUERY Processing
-				// ######################
-
-				// now we run the query on top of that
-
-				List<Integer> allLines = partIDSortedList;
-				List<Integer> origList = myQuery;
-
-				// will store the common PartID's
-				List<Integer> inCommon = new ArrayList<Integer>();
-				int posInOrig = 0;
-				int posInThis = 0;
-
-				while (true) {
-
-					// if we got to the end of either, break
-					if (posInThis == allLines.size() || posInOrig == origList.size())
-						break;
-
-					// first, loop to the last repeated value
-					while (posInThis + 1 < allLines.size() && allLines.get(posInThis) == allLines.get(posInThis + 1)) {
-						posInThis++;
-					}
-
-					// next, see if the two are the same
-					if (allLines.get(posInThis) == origList.get(posInOrig)) {
-						inCommon.add(allLines.get(posInThis));
-						posInThis++;
-						posInOrig++;
-
-						// otherwise, advance the smaller one
-					} else if (allLines.get(posInThis) < origList.get(posInOrig)) {
-						posInThis++;
-					} else {
-						posInOrig++;
-					}
-				}
-
-				// and get the number of unique items in the list of parts
-				int numUnique = 0;
-				posInThis = 0;
-				while (true) {
-
-					if (posInThis == allLines.size())
-						break;
-
-					// loop to the last repeated value
-					while (posInThis + 1 < allLines.size() && allLines.get(posInThis) == allLines.get(posInThis + 1))
-						posInThis++;
-
-					// saw another unique
-					numUnique++;
-					posInThis++;
-
-				}
-
-				double similarityValue = ((double) inCommon.size()) / (double) (numUnique + numUniqueInQuery - inCommon.size());
-
-				// make a new wrapper object and return
-				return new Wrapper(customer.getCustkey(), partIDSortedList, similarityValue);
+			public Wrapper call(Customer m_Customer) throws Exception {
+				// Process the Customer, implementation extracted from here to be able to do unit testing.
+				return processCustomer(m_Customer, myQuery);
 			}
-
 		});
+		
+		
+		
+		
+		
+		
 
-		List<Wrapper> results = myMappedData.top(10);
+//		List<Wrapper> results = myMappedData.top(10);
+		
+		List<Wrapper> results = myMappedData.collect();
+
 
 		for (Wrapper wrapper : results) {
 			System.out.println(wrapper);
 		}
 
+		
+		
+		
+		
+		
+		
+		
+		
 		// Stop the timer
 		finalTimestamp = System.nanoTime();
 
@@ -290,20 +227,131 @@ public class TopJaccard {
 		// total elapsed time
 		elapsedTotalTime = (finalTimestamp - startTime) / 1000000000.0;
 
-//		// print out the final results
-//		if (warmCache == 1)
-//			System.out.println("Result Query 1:\nDataset Factor: " + NUMBER_OF_COPIES + "\nNum Part: " + numPartitions + "\nNum Cust: " + numberOfCustomers
-//					+ "\nResult count: " + finalResultCount + "\nReads HDFS time: " + readsHDFSTime + "\nLoad RDD time: " + String.format("%.9f", loadRDDTime)
-//					+ "\nTime to count: " + String.format("%.9f", countTime) + "\nQuery time: " + String.format("%.9f", queryTime) + "\nTotal time: "
-//					+ String.format("%.9f", elapsedTotalTime) + "\n");
-//		else
-//			System.out.println("Result Query 1:\nDataset Factor: " + NUMBER_OF_COPIES + "\nNum Part: " + numPartitions + "\nNum Cust: " + numberOfCustomers
-//					+ "\nResult count: " + finalResultCount + "\nReads HDFS time: " + readsHDFSTime + "\nLoad RDD time: " + String.format("%.9f", loadRDDTime)
-//					+ "\nQuery time: " + String.format("%.9f", queryTime) + "\nTotal time: " + String.format("%.9f", elapsedTotalTime) + "\n");
+		// // print out the final results
+		// if (warmCache == 1)
+		// System.out.println("Result Query 1:\nDataset Factor: " + NUMBER_OF_COPIES + "\nNum Part: " + numPartitions + "\nNum Cust: " + numberOfCustomers
+		// + "\nResult count: " + finalResultCount + "\nReads HDFS time: " + readsHDFSTime + "\nLoad RDD time: " + String.format("%.9f", loadRDDTime)
+		// + "\nTime to count: " + String.format("%.9f", countTime) + "\nQuery time: " + String.format("%.9f", queryTime) + "\nTotal time: "
+		// + String.format("%.9f", elapsedTotalTime) + "\n");
+		// else
+		// System.out.println("Result Query 1:\nDataset Factor: " + NUMBER_OF_COPIES + "\nNum Part: " + numPartitions + "\nNum Cust: " + numberOfCustomers
+		// + "\nResult count: " + finalResultCount + "\nReads HDFS time: " + readsHDFSTime + "\nLoad RDD time: " + String.format("%.9f", loadRDDTime)
+		// + "\nQuery time: " + String.format("%.9f", queryTime) + "\nTotal time: " + String.format("%.9f", elapsedTotalTime) + "\n");
 
 		// Finally stop the Spark context once all is completed
 
 		sc.stop();
 
 	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+	public static Wrapper processCustomer(Customer m_Customer, List<Integer> myQuery) {
+
+		List<Order> orders = m_Customer.getOrders();
+
+		// we do nothing if
+		if (orders.size() == 0 || orders == null) {
+			return new Wrapper(m_Customer.getCustkey(), null, 0);
+		}
+
+		// Sorting HashSet using List
+		List<Integer> partIDSortedList = new ArrayList<Integer>(orders.size());
+
+		// iterates over all orders for a customer
+		for (Order order : orders) {
+			List<LineItem> lineItems = order.getLineItems();
+
+			// iterates over the items in an order
+			for (LineItem lineItem : lineItems) {
+				partIDSortedList.add(lineItem.getPart().getPartID());
+			}
+		}
+
+		// sort the list
+		Collections.sort(partIDSortedList);
+
+		// ######################
+		// ### QUERY Processing
+		// ######################
+
+		// now we run the query on top of that
+
+		List<Integer> allLines = partIDSortedList;
+		List<Integer> origList = myQuery;
+
+		// will store the common PartID's
+		List<Integer> inCommon = new ArrayList<Integer>();
+		int posInOrig = 0;
+		int posInThis = 0;
+
+		while (true) {
+
+			// if we got to the end of either, break
+			if (posInThis == allLines.size() || posInOrig == origList.size())
+				break;
+
+			// first, loop to the last repeated value
+			while (posInThis + 1 < allLines.size() && allLines.get(posInThis) == allLines.get(posInThis + 1)) {
+				posInThis++;
+			}
+
+			// next, see if the two are the same
+			if (allLines.get(posInThis) == origList.get(posInOrig)) {
+				inCommon.add(allLines.get(posInThis));
+				posInThis++;
+				posInOrig++;
+
+				// otherwise, advance the smaller one
+			} else if (allLines.get(posInThis) < origList.get(posInOrig)) {
+				posInThis++;
+			} else {
+				posInOrig++;
+			}
+		}
+
+		// and get the number of unique items in the list of parts
+		int numUnique = 0;
+		posInThis = 0;
+		while (true) {
+
+			if (posInThis == allLines.size())
+				break;
+
+			// loop to the last repeated value
+			while (posInThis + 1 < allLines.size() && allLines.get(posInThis) == allLines.get(posInThis + 1))
+				posInThis++;
+
+			// saw another unique
+			numUnique++;
+			posInThis++;
+
+		}
+
+		double similarityValue = ((double) inCommon.size()) / (double) (numUnique + numUniqueInQuery - inCommon.size());
+
+		// make a new wrapper object and return
+		return new Wrapper(m_Customer.getCustkey(), partIDSortedList, similarityValue);
+	}
+
 }

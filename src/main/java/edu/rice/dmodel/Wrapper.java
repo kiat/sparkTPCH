@@ -68,7 +68,7 @@ public class Wrapper implements Serializable, Comparable<Wrapper> {
 	public String toString() {
 
 		String myString = "";
-		myString = "Score is: [" + this.score + " ] [ " + this.customerID + " ], List: " + this.partIDs + " ]";
+		myString = "Score is: [" + this.score + " ] [Customer:" + this.customerID + "], List: " + this.partIDs + " ]";
 		return myString;
 	}
 
