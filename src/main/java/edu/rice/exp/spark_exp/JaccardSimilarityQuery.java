@@ -1,6 +1,7 @@
 package edu.rice.exp.spark_exp;
 
 import java.io.BufferedReader;
+import java.util.Comparator;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -17,6 +18,7 @@ import java.util.Set;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDDLike;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function2;
@@ -366,8 +368,15 @@ public class JaccardSimilarityQuery {
 		// similarity score.
 		// TODO: verify that this works as intended
 		
-		//jaccardSimilarityScore.top(topKValue);		
-
+		
+		jaccardSimilarityScore.top(topKValue);
+		
+//		top(topKValue, new Comparator<Double>() {
+//			@Override
+//			public int compare(Double o1, Double o2) {
+//				return o2 - o1;
+//			}
+//		});
 //		jaccardSimilarityScore.foreach(VoidFunction<Tuple2<Double, Tuple2<Integer,List<Integer>>>>(){
 //	
 //		});
