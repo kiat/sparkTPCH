@@ -107,7 +107,7 @@ public class JaccardSimilarityQuery {
 		try (BufferedReader br = new BufferedReader(new FileReader(inputQueryFile))) {
 			String line;
 			while ((line = br.readLine()) != null) {
-				listOfParts = line.split(",");
+				listOfParts = line.split(" ");
 			}
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
