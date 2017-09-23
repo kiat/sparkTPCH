@@ -376,8 +376,8 @@ public class JaccardSimilarityQuery implements Serializable {
 			@Override
 			public int compare(Tuple2<Double, Tuple2<Integer, List<Integer>>> score_1, 
 					           Tuple2<Double, Tuple2<Integer, List<Integer>>> score_2) {
-				if (score_1._1 < score_2._1) return -1;
-				if (score_1._1 > score_2._1) return 1;
+				if (score_1._1 > score_2._1) return -1;
+				if (score_1._1 < score_2._1) return 1;
 				return 0;
 			}
 		});
