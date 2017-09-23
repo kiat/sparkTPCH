@@ -368,7 +368,8 @@ public class JaccardSimilarityQuery implements Serializable {
 		
 		// Return the top 10 entries in the RDD, the key is the 
 		// similarity score.
-		// TODO: verify that this works as intended
+		// is printing on workers for debugging purposes
+		// TODO: print after the top
 
 		jaccardSimilarityScore.foreach(new VoidFunction<Tuple2<Double, Tuple2<Integer,List<Integer>>>> (){
 			
@@ -376,23 +377,23 @@ public class JaccardSimilarityQuery implements Serializable {
 			
 			@Override
 			public void call(Tuple2<Double, Tuple2<Integer, List<Integer>>> data) {
-		        System.out.println("Customer key: "+ data._2._1 + " Similarity Score: " + data._2._1 + "\nParts:" + data._2._2);	
+		        System.out.println("Customer key: "+ data._2._1 + " Similarity Score: " + data._1 + "\nParts:" + data._2._2);	
 			}
 
 		});
 		
-//		jaccardSimilarityScore.top(topKValue, new Comparator<Tuple2<Double, Tuple2<Integer, List<Integer>>>> () {
-//			
-//			private static final long serialVersionUID = 1610211969496211511L;
-//			
-//			@Override
-//			public int compare(Tuple2<Double, Tuple2<Integer, List<Integer>>> score_1, 
-//					           Tuple2<Double, Tuple2<Integer, List<Integer>>> score_2) {
-//				if (score_1._1 > score_2._1) return -1;
-//				if (score_1._1 < score_2._1) return 1;
-//				return 0;
-//			}
-//		}) ;
+		jaccardSimilarityScore.top(topKValue, new Comparator<Tuple2<Double, Tuple2<Integer, List<Integer>>>> () {
+			
+			private static final long serialVersionUID = 1234251969496211511L;
+			
+			@Override
+			public int compare(Tuple2<Double, Tuple2<Integer, List<Integer>>> score_1, 
+					           Tuple2<Double, Tuple2<Integer, List<Integer>>> score_2) {
+				if (score_1._1 > score_2._1) return -1;
+				if (score_1._1 < score_2._1) return 1;
+				return 0;
+			}
+		}) ;
 	    
 		int finalResultCount=0;
 		
