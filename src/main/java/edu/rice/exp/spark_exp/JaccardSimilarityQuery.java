@@ -90,6 +90,9 @@ public class JaccardSimilarityQuery {
 
 		// TODO this is not used and should be removed
 		String fileScale = "0.2";
+		
+		// Default name of file with query data
+		String inputQueryFile = "jaccardInput";
 
 		// can be overwritten by the 4rd command line arg
 		// 0 = the query time doesn't include count nor count.distinct
@@ -100,7 +103,8 @@ public class JaccardSimilarityQuery {
 		if (args.length > 0)
 			NUMBER_OF_COPIES = Integer.parseInt(args[0]);
 
-		String inputQueryFile = args[1];
+		if (args.length > 1)		
+		    inputQueryFile = args[1];
 
 		String[] listOfParts = null;
 		
