@@ -90,10 +90,10 @@ public class MyKryoRegistrator implements KryoRegistrator, Serializable {
 		doRegistration(kryo, "org.spark_project.guava.collect.NaturalOrdering");
 		
 		//Jaccard classes
-		doRegistration(kryo, "edu.rice.exp.spark_exp.JaccardSimilarityQuery$3");
-		doRegistration(kryo, "scala.math.Ordering$$anon$4");
-		doRegistration(kryo, "org.apache.spark.rdd.RDD$$anonfun$takeOrdered$1");
-		doRegistration(kryo, "org.apache.spark.rdd.RDD$$anonfun$takeOrdered$1$$anonfun$30");		
+		doRegistration(kryo, "edu.rice.exp.spark_exp.JaccardSimilarityQuery");
+		doRegistration(kryo, "scala.math.Ordering");
+		doRegistration(kryo, "org.apache.spark.rdd.RDD");
+		doRegistration(kryo, "java.util.Comparator");		
 
 		//  java.lang.IllegalArgumentException: Class is not registered: scala.math.LowPriorityOrderingImplicits$$anon$7
 		

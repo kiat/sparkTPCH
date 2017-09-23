@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDDLike;
@@ -368,24 +369,30 @@ public class JaccardSimilarityQuery implements Serializable {
 		// Return the top 10 entries in the RDD, the key is the 
 		// similarity score.
 		// TODO: verify that this works as intended
-				
-		jaccardSimilarityScore.top(topKValue, new Comparator<Tuple2<Double, Tuple2<Integer, List<Integer>>>>() {
+
+		jaccardSimilarityScore.foreach(new VoidFunction<Tuple2<Double, Tuple2<Integer,List<Integer>>>> (){
 			
-			private static final long serialVersionUID = 1610211969496211511L;
+			private static final long serialVersionUID = 1310211969496211511L;
 			
 			@Override
-			public int compare(Tuple2<Double, Tuple2<Integer, List<Integer>>> score_1, 
-					           Tuple2<Double, Tuple2<Integer, List<Integer>>> score_2) {
-				if (score_1._1 > score_2._1) return -1;
-				if (score_1._1 < score_2._1) return 1;
-				return 0;
+			public void call(Tuple2<Double, Tuple2<Integer, List<Integer>>> data) {
+		        System.out.println("Customer key: "+ data._2._1 + " Similarity Score: " + data._2._1 + "\nParts:" + data._2._2);	
 			}
+
 		});
 		
-		// TODO, implement this foreach
-//		jaccardSimilarityScore.foreach(new VoidFunction<Tuple2<Double, Tuple2<Integer,List<Integer>>>>(data){
-//	        System.out.println("Part key: "+data + " Similarity: " + data._2);	
-//		});
+//		jaccardSimilarityScore.top(topKValue, new Comparator<Tuple2<Double, Tuple2<Integer, List<Integer>>>> () {
+//			
+//			private static final long serialVersionUID = 1610211969496211511L;
+//			
+//			@Override
+//			public int compare(Tuple2<Double, Tuple2<Integer, List<Integer>>> score_1, 
+//					           Tuple2<Double, Tuple2<Integer, List<Integer>>> score_2) {
+//				if (score_1._1 > score_2._1) return -1;
+//				if (score_1._1 < score_2._1) return 1;
+//				return 0;
+//			}
+//		}) ;
 	    
 		int finalResultCount=0;
 		
