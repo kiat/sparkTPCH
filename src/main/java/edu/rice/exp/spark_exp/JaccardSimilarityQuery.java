@@ -64,7 +64,9 @@ import edu.rice.dmodel.Part;
  *
  */
 
-public class JaccardSimilarityQuery {
+public class JaccardSimilarityQuery implements Serializable {
+	
+	private static final long serialVersionUID = 3045541819871271488L;	
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
