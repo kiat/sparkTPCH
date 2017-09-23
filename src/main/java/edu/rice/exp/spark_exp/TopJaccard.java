@@ -4,25 +4,16 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.Set;
 
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.api.java.function.Function2;
-import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.VoidFunction;
-import org.apache.spark.storage.StorageLevel;
 
-import scala.Tuple2;
 import edu.rice.dmodel.Customer;
 import edu.rice.dmodel.LineItem;
 import edu.rice.dmodel.MyKryoRegistrator;
@@ -30,22 +21,41 @@ import edu.rice.dmodel.Order;
 import edu.rice.dmodel.Wrapper;
 import edu.rice.generate_data.DataGenerator;
 
-import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.PairFunction;
-
 public class TopJaccard {
 
 	// the capacity of priority queue is 10
-	public static PriorityQueue<Wrapper> topKQueue = new PriorityQueue<Wrapper>(10);
+	public static PriorityQueue<Wrapper> topKQueue;
 
-	public static List<Integer> myQuery = new ArrayList<Integer>();
+	public static List<Integer> myQuery;
+	public static int numUniqueInQuery = 0;
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-		int[] thisIsAnIntArray = { 371, 374, 780, 888, 937, 985, 1165, 1249, 1296, 1701, 1808, 2018, 2111 };
+		int[] thisIsAnIntArray = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 20, 24, 27 };
+
+		myQuery = new ArrayList<Integer>();
+		topKQueue = new PriorityQueue<Wrapper>(10);
 
 		for (int i : thisIsAnIntArray) {
 			TopJaccard.myQuery.add(i);
 		}
+
+		System.out.println(myQuery);
+
+		int m_index = 0;
+		while (true) {
+			if (m_index == TopJaccard.myQuery.size())
+				break;
+			// loop to the last repeated value
+			while (m_index + 1 < myQuery.size() && myQuery.get(m_index) == myQuery.get(m_index + 1)) {
+				m_index++;
+			}
+
+			// saw another unique
+			numUniqueInQuery++;
+			m_index++;
+		}
+
+		System.out.println("numUniqueInQuery=" + numUniqueInQuery);
 
 		// can be overwritten by the fourth command line arg
 		String hdfsNameNodePath = "hdfs://10.134.96.100:9000/user/kia/customer-";
@@ -169,8 +179,8 @@ public class TopJaccard {
 
 				List<Order> orders = customer.getOrders();
 
-				// A List to store partIDs for each Customer
-				Set<Integer> partIDSet = new HashSet<Integer>();
+				// Sorting HashSet using List
+				List<Integer> partIDSortedList = new ArrayList<Integer>(orders.size());
 
 				// iterates over all orders for a customer
 				for (Order order : orders) {
@@ -178,18 +188,19 @@ public class TopJaccard {
 
 					// iterates over the items in an order
 					for (LineItem lineItem : lineItems) {
-						partIDSet.add(lineItem.getPart().getPartID());
+						partIDSortedList.add(lineItem.getPart().getPartID());
 					}
 				}
 
-				// Sorting HashSet using List
-				List<Integer> partIDSortedList = new ArrayList<Integer>(partIDSet);
+				// sort the list
 				Collections.sort(partIDSortedList);
 
+				// make a new wrapper object and return
 				return new Wrapper(customer.getCustkey(), partIDSortedList);
 			}
 
 		});
+
 		//
 		// List<Wrapper> took10 = myMappedData.take(10);
 		//
@@ -211,63 +222,89 @@ public class TopJaccard {
 				if (myGuy.getPartIDs().size() == 0)
 					return;
 
-				List<Integer> customerListOfPartsIds = myGuy.getPartIDs();
-				List<Integer> queryListOfPartsIds = TopJaccard.myQuery;
+				List<Integer> allLines = myGuy.getPartIDs();
+				List<Integer> origList = myQuery;
 
 				// will store the common PartID's
 				List<Integer> inCommon = new ArrayList<Integer>();
+				int posInOrig = 0;
+				int posInThis = 0;
 
-				// will store all PartID's (repeated counts only one)
-				List<Integer> totalUniquePartsID = new ArrayList<Integer>();
+				while (true) {
 
-				int countFirst = 0;
-				int countSecond = 0;
+					// if we got to the end of either, break
+					if (posInThis == allLines.size() || posInOrig == origList.size())
+						break;
 
-				while (countFirst < queryListOfPartsIds.size() && countSecond < customerListOfPartsIds.size()) {
+					// first, loop to the last repeated value
+					while (posInThis + 1 < allLines.size() && allLines.get(posInThis) == allLines.get(posInThis + 1)) {
+						posInThis++;
+					}
 
-					if (queryListOfPartsIds.get(countFirst) > customerListOfPartsIds.get(countSecond)) {
-						totalUniquePartsID.add(customerListOfPartsIds.get(countSecond));
-						countSecond++;
+					// next, see if the two are the same
+					if (allLines.get(posInThis) == origList.get(posInOrig)) {
+						inCommon.add(allLines.get(posInThis));
+						posInThis++;
+						posInOrig++;
+
+						// otherwise, advance the smaller one
+					} else if (allLines.get(posInThis) < origList.get(posInOrig)) {
+						posInThis++;
 					} else {
-						if (queryListOfPartsIds.get(countFirst) == customerListOfPartsIds.get(countSecond)) {
-
-							inCommon.add(queryListOfPartsIds.get(countFirst));
-							countSecond++;
-						}
-						totalUniquePartsID.add(queryListOfPartsIds.get(countFirst));
-						countFirst++;
+						posInOrig++;
 					}
 				}
 
-				// now add the not in common entries for the largest list
-				if (queryListOfPartsIds.size() > customerListOfPartsIds.size()) {
+				// and get the number of unique items in the list of parts
+				int numUnique = 0;
+				posInThis = 0;
+				while (true) {
 
-					for (int i = 0; i < queryListOfPartsIds.size(); i++)
-						totalUniquePartsID.add(queryListOfPartsIds.get(i));
+					if (posInThis == allLines.size())
+						break;
 
-				} else {
+					// loop to the last repeated value
+					while (posInThis + 1 < allLines.size() && allLines.get(posInThis) == allLines.get(posInThis + 1))
+						posInThis++;
 
-					for (int i = 0; i < customerListOfPartsIds.size(); i++)
-						totalUniquePartsID.add(customerListOfPartsIds.get(i));
+					// saw another unique
+					numUnique++;
+					posInThis++;
 
 				}
 
-				Double similarityValue = new Double((double) (inCommon.size() / totalUniquePartsID.size()));
+				double similarityValue = ((double) inCommon.size()) / (double) (numUnique + numUniqueInQuery - inCommon.size());
 
 				// set the score for my guy
 				myGuy.setScore(similarityValue);
 
-				System.out.println(inCommon.size()  + "/ " + totalUniquePartsID.size() +" = "+similarityValue);
+				// if( inCommon.size()!= 0)
+				// System.out.println(" inCommon= " + inCommon.size() + " numUnique= " + numUnique + " numUniqueInQuery= " + numUniqueInQuery
+				// +" similarityValue= "+similarityValue);
 
 				// add my guy to the priorityQueue.
-				TopJaccard.topKQueue.add(myGuy);
+
+				
+
+				  synchronized(topKQueue){
+					  
+						topKQueue.offer(myGuy);
+
+//						if(topKQueue.size() > 10){
+//							Object[] tmp= topKQueue.toArray();
+//							topKQueue.remove(tmp[10]);
+//						}
+							
+						
+				    }
+		
 
 			}
 
 		});
 
-		for (Wrapper wrapper : TopJaccard.topKQueue) {
-			System.out.println(wrapper);
+		for (int i = 0; i < 10; i++) {
+			System.out.println(topKQueue.poll());
 		}
 
 		//

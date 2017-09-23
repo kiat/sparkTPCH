@@ -54,9 +54,9 @@ public class Wrapper implements Serializable, Comparable<Wrapper> {
 
 	@Override
 	public int compareTo(Wrapper o) {
-		if (this.getScore() < o.getScore())
+		if (o.getScore() < this.getScore())
 			return -1;
-		if (this.getScore() > o.getScore())
+		if (o.getScore() > this.getScore())
 			return 1;
 		return 0;
 	}
@@ -67,7 +67,7 @@ public class Wrapper implements Serializable, Comparable<Wrapper> {
 	public String toString() {
 
 		String myString = "";
-		myString = "[ " + this.customerID + " ], List: " + this.partIDs + " , Score is: [" + this.score + " ]";
+		myString = "Score is: [" + this.score + " ] [ " + this.customerID + " ], List: " + this.partIDs + " ]";
 		return myString;
 	}
 
