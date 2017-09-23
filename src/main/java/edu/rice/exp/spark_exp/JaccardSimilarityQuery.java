@@ -213,7 +213,7 @@ public class JaccardSimilarityQuery {
 															  List<Integer>>() {	// Value returned: A List of all parts Id's
 																					// from all orders for each customer
 	
-				private static final long serialVersionUID = -1932241861741271488L;
+				private static final long serialVersionUID = 1932241819871271488L;
 	
 				@Override
 				public Iterator<Tuple2<Integer, List<Integer>>> call(Customer customer) throws Exception {
@@ -262,7 +262,7 @@ public class JaccardSimilarityQuery {
 													Double,													    // Key: Similarity
 													Tuple2<Integer, List<Integer>>>() {							// Returned value
 		
-			private static final long serialVersionUID = -1932241861741271488L;
+			private static final long serialVersionUID = 2009241861741271488L;
 
 			@Override
 			public Iterator<Tuple2<Double, Tuple2<Integer, List<Integer>>>> call(Tuple2<Integer, List<Integer>> item) throws Exception {
@@ -270,7 +270,6 @@ public class JaccardSimilarityQuery {
 				List<Integer> customerListOfPartsIds = item._2; // retrieves the list of parts for this customer
 																
 				// sort both lists to speed up lookups
-				// TODO: this still can be optimized further
 				Collections.sort(customerListOfPartsIds);						
 				Collections.sort(queryListOfPartsIds);
 				
@@ -377,11 +376,11 @@ public class JaccardSimilarityQuery {
 				return 0;
 			}
 		});
-//		jaccardSimilarityScore.foreach(VoidFunction<Tuple2<Double, Tuple2<Integer,List<Integer>>>>(){
-//	
+		
+		// TODO, implement this foreach
+//		jaccardSimilarityScore.foreach(new VoidFunction<Tuple2<Double, Tuple2<Integer,List<Integer>>>>(data){
+//	        System.out.println("Part key: "+data + " Similarity: " + data._2);	
 //		});
-//	        System.out.println("Part key: "+data._1() + " Similarity: " + data._2() + " " + );
-//	    }); 
 	    
 		int finalResultCount=0;
 		
