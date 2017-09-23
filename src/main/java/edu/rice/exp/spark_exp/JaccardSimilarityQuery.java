@@ -333,7 +333,12 @@ public class JaccardSimilarityQuery {
 				Tuple2<Integer, Tuple2<Double, List<Integer>>> outerTuple = 
 						new Tuple2<Integer, Tuple2<Double, List<Integer>>>(item._1, innerTuple);
 				
-				return (Iterator<Tuple2<Integer, Tuple2<Double, List<Integer>>>>) (outerTuple);
+				List<Tuple2<Integer, Tuple2<Double, List<Integer>>>> returnTuple = 
+					    new ArrayList<Tuple2<Integer, Tuple2<Double, List<Integer>>>>();
+				
+				returnTuple.add(outerTuple);
+								
+				return returnTuple.iterator();
 				
 			}
 		});
