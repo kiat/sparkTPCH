@@ -121,9 +121,8 @@ public class JaccardSimilarityQuery {
 		    new ArrayList<Integer>(listOfParts.length);		
 
 		for (int i = 0; i < listOfParts.length; i++) {
-			System.out.println(listOfParts[i]);
-//			int tmp = Integer.parseInt(listOfParts[i].replaceAll(",", ""));
-//			queryListOfPartsIds.add(tmp);
+			int tmp = Integer.parseInt(listOfParts[i]);
+			queryListOfPartsIds.add(tmp);
 		}
 		
 		if (args.length > 2)
