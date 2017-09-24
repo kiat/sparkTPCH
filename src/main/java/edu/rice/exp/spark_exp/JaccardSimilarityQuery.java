@@ -349,10 +349,11 @@ public class JaccardSimilarityQuery implements Serializable {
 //				Double similarityValue = new Double(0.0);
 
 				// Prevents divided by zero errors
-//				if (totalUniquePartsID.size()!=0){				
+//				if (totalUniquePartsID.size()!=0){
+				//double calculate = ((double)inCommon.size() / (double)totalUniquePartsID.size());
 				Double similarityValue = new Double(((double)inCommon.size() / (double)totalUniquePartsID.size()));
 //				if (inCommon.size()>0) 
-					System.out.print("; Common: "+ inCommon.size() + " | score " + similarityValue + " | " + similarityValue.toString());
+					System.out.println("; query size: " +queryListOfPartsIds.size() + " | Common: "+ inCommon.size() + " | score " + similarityValue + " | " + similarityValue.toString());
 //				}
 				
 				// adds the similarity along with part ID's purchased by this Customer
