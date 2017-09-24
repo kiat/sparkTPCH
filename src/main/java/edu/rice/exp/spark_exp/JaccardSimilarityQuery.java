@@ -254,9 +254,10 @@ public class JaccardSimilarityQuery implements Serializable {
 						}
 						// sorts partId's
 						Collections.sort(listOfPartsIds, (a, b) -> b.compareTo(a));
+						// creates the tuple to be returned, with the Customer.key and a List<PartsId>
+						returnTuple.add(new Tuple2<Integer, List<Integer>>(new Integer(customer.getCustkey()), listOfPartsIds));
+						
 					}
-					// creates the tuple to be returned, with the Customer.key and a List<PartsId>
-					returnTuple.add(new Tuple2<Integer, List<Integer>>(new Integer(customer.getCustkey()), listOfPartsIds));
 					
 					return returnTuple.iterator();
 				}
