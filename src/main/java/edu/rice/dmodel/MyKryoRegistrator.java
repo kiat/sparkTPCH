@@ -91,6 +91,7 @@ public class MyKryoRegistrator implements KryoRegistrator, Serializable {
 		
 		//Jaccard classes
 		doRegistration(kryo, "edu.rice.exp.spark_exp.JaccardSimilarityQuery");
+		doRegistration(kryo, "edu.rice.exp.spark_exp.JaccardSimilarityQuery$1TupleComparator");
 		doRegistration(kryo, "scala.math.Ordering");
 		doRegistration(kryo, "org.apache.spark.rdd.RDD");
 		doRegistration(kryo, "java.util.Comparator");		
