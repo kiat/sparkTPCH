@@ -296,7 +296,10 @@ public class JaccardSimilarityQuery implements Serializable {
 				int indexQueryList = 0;
 				int indexCustoList = 0;
 				System.out.println("In calc Size of entries " + customerListOfPartsIds.size());
-
+				
+                System.out.println("query list" + queryListOfPartsIds.toString());
+                System.out.println("this list" + queryListOfPartsIds.toString());
+                
 				// iterates until the end of the shortest list is reached
 				while(indexQueryList < queryListOfPartsIds.size() && 
 					  indexCustoList < customerListOfPartsIds.size()){
