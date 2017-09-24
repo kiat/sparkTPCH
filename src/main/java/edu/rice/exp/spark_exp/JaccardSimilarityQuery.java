@@ -396,7 +396,7 @@ public class JaccardSimilarityQuery implements Serializable {
 		// print the topK entries
 		for (Tuple2<Double, Tuple2<Integer, List<Integer>>>  resultItem : topKResults) {
 	        System.out.println("Customer key: "+ resultItem._2._1 + 
-	        				   " Similarity Score: " + resultItem._1 + 
+	        				   " Similarity Score: " + resultItem._1.toString() + 
 	        				   "\nParts:" + resultItem._2._2);	
 		}
 				
