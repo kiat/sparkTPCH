@@ -318,7 +318,7 @@ public class JaccardSimilarityQuery implements Serializable {
 					
 					// if the value in the current entry in Query List is greater 
 					// than the one in the Customer List, this is a unique partId
-					if (queryListOfPartsIds.get(indexQueryList) > customerListOfPartsIds.get(indexCustoList)){
+					if (queryListOfPartsIds.get(indexQueryList).intValue() > customerListOfPartsIds.get(indexCustoList).intValue()){
 						
 						totalUniquePartsID.add(customerListOfPartsIds.get(indexCustoList));
 						// move index in Customer List to the next entry
@@ -327,7 +327,7 @@ public class JaccardSimilarityQuery implements Serializable {
 					} else {
 						// if both values in the current Query List and Customer List 
 						// are equal, this is a common partId					
-						if (queryListOfPartsIds.get(indexQueryList) == customerListOfPartsIds.get(indexCustoList)){
+						if (queryListOfPartsIds.get(indexQueryList).intValue() == customerListOfPartsIds.get(indexCustoList).intValue()){
 							
 							inCommon.add(queryListOfPartsIds.get(indexQueryList));
 							// but a common part is also unique, so put it in the 
