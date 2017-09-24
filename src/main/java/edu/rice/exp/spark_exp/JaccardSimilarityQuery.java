@@ -174,13 +174,14 @@ public class JaccardSimilarityQuery implements Serializable {
 		startTime = System.nanoTime();
 
 		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
+
+		customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
 		
 		readFileTime = System.nanoTime();
 
 		if (warmCache == 1) {
 
 			// customerRDD=customerRDD.coalesce(numPartitions);
-			customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
 
 			System.out.println("Get the number of Customers");
 
@@ -372,30 +373,32 @@ public class JaccardSimilarityQuery implements Serializable {
 		// is printing on workers for debugging purposes
 		// TODO: print after the top
 		System.out.println("Total after 2nd map " +jaccardSimilarityScore.count());
-
-		jaccardSimilarityScore.foreach(new VoidFunction<Tuple2<Double, Tuple2<Integer,List<Integer>>>> (){
-			
-			private static final long serialVersionUID = 1310211969496211511L;
-			
-			@Override
-			public void call(Tuple2<Double, Tuple2<Integer, List<Integer>>> data) {
-		        //System.out.println("Customer key: "+ data._2._1 + " Similarity Score: " + data._1 + "\nParts:" + data._2._2);	
-			}
-
-		});
 		
-//		jaccardSimilarityScore.top(topKValue, new Comparator<Tuple2<Double, Tuple2<Integer, List<Integer>>>> () {
+		// Comparator class for comparing similarity results, to be used in top and
+		// prevent serialization error by implementing Serializable
+		class TupleComparator implements Comparator<Tuple2<Double, Tuple2<Integer, List<Integer>>>>, Serializable {
+
+			private static final long serialVersionUID = 1972211969496211511L;
+
+			@Override
+		    public int compare(Tuple2<Double, Tuple2<Integer,List<Integer>>> score_1, 
+		    				   Tuple2<Double, Tuple2<Integer,List<Integer>>> score_2) {
+		        return Double.compare(score_1._1, score_2._1);
+		    }
+		}	
+		
+//		jaccardSimilarityScore.foreach(new VoidFunction<Tuple2<Double, Tuple2<Integer,List<Integer>>>> (){
 //			
-//			private static final long serialVersionUID = 1234251969496211511L;
+//			private static final long serialVersionUID = 1310211969496211511L;
 //			
 //			@Override
-//			public int compare(Tuple2<Double, Tuple2<Integer, List<Integer>>> score_1, 
-//					           Tuple2<Double, Tuple2<Integer, List<Integer>>> score_2) {
-//				if (score_1._1 > score_2._1) return -1;
-//				if (score_1._1 < score_2._1) return 1;
-//				return 0;
+//			public void call(Tuple2<Double, Tuple2<Integer, List<Integer>>> data) {
+//		        //System.out.println("Customer key: "+ data._2._1 + " Similarity Score: " + data._1 + "\nParts:" + data._2._2);	
 //			}
-//		}) ;
+//
+//		});
+				
+		jaccardSimilarityScore.top(topKValue, new TupleComparator ());
 	    
 		int finalResultCount=0;
 		
@@ -429,5 +432,6 @@ public class JaccardSimilarityQuery implements Serializable {
 		sc.stop();
 
 	}
+	
 }
 
