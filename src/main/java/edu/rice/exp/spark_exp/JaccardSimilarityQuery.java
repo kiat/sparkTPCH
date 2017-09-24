@@ -349,9 +349,8 @@ public class JaccardSimilarityQuery implements Serializable {
 				
 				Double similarityValue = new Double(0.0);
 
-				// If at least one of the Lists is empty, the similarity will be
-				// 0 (this prevents divided by zero errors)
-				if (inCommon.size()==0 || totalUniquePartsID.size()==0)
+				// Prevents divided by zero errors
+				if (totalUniquePartsID.size()!=0)
 					 similarityValue = new Double((double)(inCommon.size() / totalUniquePartsID.size()));
 				
 				// adds the similarity along with part ID's purchased by this Customer
@@ -389,7 +388,8 @@ public class JaccardSimilarityQuery implements Serializable {
 		// Return the top 10 entries in the RDD, the key is the 
 		// similarity score.
 		
-		List<Tuple2<Double, Tuple2<Integer, List<Integer>>>> topKResults = jaccardSimilarityScore.top(topKValue, new TupleComparator ());
+		List<Tuple2<Double, Tuple2<Integer, List<Integer>>>> topKResults = 
+				jaccardSimilarityScore.top(topKValue, new TupleComparator ());
 		
 		System.out.println("Total after topK " + topKValue + " is: " +topKResults.size());
 				
