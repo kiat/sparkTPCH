@@ -147,7 +147,7 @@ public class JaccardSimilarityQuery implements Serializable {
 		long numberOfDistinctCustomers = 0;
 
 		SparkConf conf = new SparkConf();
-		conf.setAppName("ComplexObjectManipulation_RDD " + NUMBER_OF_COPIES);
+		conf.setAppName("JaccardSimilarity- " + NUMBER_OF_COPIES);
 				
 		// Kryo Serialization
 		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
@@ -256,6 +256,7 @@ public class JaccardSimilarityQuery implements Serializable {
 				}
 			});
 		
+		System.out.println("Total after 1st map " + allPartsIDsPerCustomer.count());
 		
 		// Now, let's compute Jaccard Similarity
 		// returns the SimilarityScore and a tuple <Customer.key, and the list of PartID's>
@@ -370,6 +371,7 @@ public class JaccardSimilarityQuery implements Serializable {
 		// similarity score.
 		// is printing on workers for debugging purposes
 		// TODO: print after the top
+		System.out.println("Total after 2nd map " +jaccardSimilarityScore.count());
 
 		jaccardSimilarityScore.foreach(new VoidFunction<Tuple2<Double, Tuple2<Integer,List<Integer>>>> (){
 			
@@ -382,18 +384,18 @@ public class JaccardSimilarityQuery implements Serializable {
 
 		});
 		
-		jaccardSimilarityScore.top(topKValue, new Comparator<Tuple2<Double, Tuple2<Integer, List<Integer>>>> () {
-			
-			private static final long serialVersionUID = 1234251969496211511L;
-			
-			@Override
-			public int compare(Tuple2<Double, Tuple2<Integer, List<Integer>>> score_1, 
-					           Tuple2<Double, Tuple2<Integer, List<Integer>>> score_2) {
-				if (score_1._1 > score_2._1) return -1;
-				if (score_1._1 < score_2._1) return 1;
-				return 0;
-			}
-		}) ;
+//		jaccardSimilarityScore.top(topKValue, new Comparator<Tuple2<Double, Tuple2<Integer, List<Integer>>>> () {
+//			
+//			private static final long serialVersionUID = 1234251969496211511L;
+//			
+//			@Override
+//			public int compare(Tuple2<Double, Tuple2<Integer, List<Integer>>> score_1, 
+//					           Tuple2<Double, Tuple2<Integer, List<Integer>>> score_2) {
+//				if (score_1._1 > score_2._1) return -1;
+//				if (score_1._1 < score_2._1) return 1;
+//				return 0;
+//			}
+//		}) ;
 	    
 		int finalResultCount=0;
 		
