@@ -281,7 +281,18 @@ public class JaccardSimilarityQuery implements Serializable {
 			public Iterator<Tuple2<Double, Tuple2<Integer, List<Integer>>>> call(Tuple2<Integer, List<Integer>> item) throws Exception {
 				
 				List<Integer> customerListOfPartsIds = item._2; // retrieves the list of parts for this customer
-																
+														
+				//todo remove this line!!!!!!
+				customerListOfPartsIds.clear();
+				customerListOfPartsIds.add(1);
+				customerListOfPartsIds.add(2);
+				customerListOfPartsIds.add(3);
+				customerListOfPartsIds.add(4);
+				customerListOfPartsIds.add(5);
+				customerListOfPartsIds.add(6);				
+				customerListOfPartsIds.add(7);				
+				customerListOfPartsIds.add(8);				
+				
 				// sort both lists to speed up lookups
 				Collections.sort(customerListOfPartsIds);						
 				Collections.sort(queryListOfPartsIds);
