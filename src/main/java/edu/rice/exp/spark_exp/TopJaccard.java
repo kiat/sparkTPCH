@@ -164,6 +164,12 @@ public class TopJaccard {
 		// System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
 		//
 		// }
+		
+		
+		
+		
+		
+		
 
 		// #############################################
 		// #############################################
@@ -227,7 +233,7 @@ public class TopJaccard {
 
 	}
 
-	public static Wrapper processCustomer(Customer m_Customer, List<Integer> myQuery) {
+	public static Wrapper processCustomer(Customer m_Customer, List<Integer> origList) {
 
 		List<Order> orders = m_Customer.getOrders();
 
@@ -237,7 +243,7 @@ public class TopJaccard {
 		}
 
 		// Sorting HashSet using List
-		List<Integer> partIDSortedList = new ArrayList<Integer>(orders.size());
+		List<Integer> allLines = new ArrayList<Integer>(orders.size());
 
 		// iterates over all orders for a customer
 		for (Order order : orders) {
@@ -245,18 +251,14 @@ public class TopJaccard {
 
 			// iterates over the items in an order
 			for (LineItem lineItem : lineItems) {
-				partIDSortedList.add(lineItem.getPart().getPartID());
+				allLines.add(lineItem.getPart().getPartID());
 			}
 		}
 
 		// ######################
 		// ### QUERY Processing
 		// ######################
-
 		// now we run the query on top of that
-
-		List<Integer> allLines = partIDSortedList;
-		List<Integer> origList = myQuery;
 
 		// sort the list
 		Collections.sort(allLines);
@@ -278,13 +280,13 @@ public class TopJaccard {
 			}
 
 			// next, see if the two are the same
-			if ((int) allLines.get(posInThis) == (int) origList.get(posInOrig)) {
+			if (allLines.get(posInThis).intValue() == origList.get(posInOrig).intValue()) {
 
 				inCommon.add(allLines.get(posInThis));
 				posInThis++;
 				posInOrig++;
 				// otherwise, advance the smaller one
-			} else if ((int) allLines.get(posInThis) < (int) origList.get(posInOrig)) {
+			} else if (allLines.get(posInThis).intValue() < origList.get(posInOrig).intValue()) {
 				posInThis++;
 			} else {
 				posInOrig++;
@@ -300,7 +302,7 @@ public class TopJaccard {
 				break;
 
 			// loop to the last repeated value
-			while (posInThis + 1 < allLines.size() && (int) allLines.get(posInThis) == (int) allLines.get(posInThis + 1))
+			while (posInThis + 1 < allLines.size() && allLines.get(posInThis).intValue() == allLines.get(posInThis + 1).intValue())
 				posInThis++;
 
 			// saw another unique
