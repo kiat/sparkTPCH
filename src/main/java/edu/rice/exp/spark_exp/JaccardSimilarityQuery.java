@@ -198,6 +198,8 @@ public class JaccardSimilarityQuery implements Serializable {
 			System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
 
 		}
+		
+		System.out.println("The query is----> " + queryListOfPartsIds.toString());
 
 		// #############################################
 		// #############################################
@@ -352,7 +354,7 @@ public class JaccardSimilarityQuery implements Serializable {
 				// Prevents divided by zero errors
 //				if (totalUniquePartsID.size()!=0){
 				Double similarityValue = new Double((double)(inCommon.size() / totalUniquePartsID.size()));
-				System.out.print("; score " + similarityValue + " | " + similarityValue.toString());
+				System.out.print("; Common: "+ inCommon.size() + " | score " + similarityValue + " | " + similarityValue.toString());
 //				}
 				
 				// adds the similarity along with part ID's purchased by this Customer
