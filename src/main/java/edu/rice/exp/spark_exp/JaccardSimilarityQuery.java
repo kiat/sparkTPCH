@@ -199,7 +199,7 @@ public class JaccardSimilarityQuery implements Serializable {
 
 		}
 		
-		System.out.println("The query is [ " + queryListOfPartsIds.toString() + " ]");
+		System.out.println("The query parts are: " + queryListOfPartsIds.toString() );
 
 		// #############################################
 		// #############################################
