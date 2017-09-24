@@ -164,12 +164,6 @@ public class TopJaccard {
 		// System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
 		//
 		// }
-		
-		
-		
-		
-		
-		
 
 		// #############################################
 		// #############################################
@@ -181,11 +175,10 @@ public class TopJaccard {
 		// Start the timer
 		startQueryTimestamp = System.nanoTime();
 
+		// We are doing one big map of each Customer object to a Wrapper Object that contains the results of Jaccard Similarity of the PartID set ordered by
+		// Customer to a specific Query( an order list of partIDs )
 		JavaRDD<Wrapper> myMappedData = customerRDD.map(new Function<Customer, Wrapper>() {
 
-			/**
-			 * 
-			 */
 			private static final long serialVersionUID = -7744382435853610996L;
 
 			@Override
@@ -195,8 +188,10 @@ public class TopJaccard {
 			}
 		});
 
+		// Then we get the top 10 Results 
 		List<Wrapper> results = myMappedData.top(10);
 
+		// We print out the results 
 		for (Wrapper wrapper : results) {
 			System.out.println(wrapper);
 		}
@@ -242,6 +237,8 @@ public class TopJaccard {
 			return new Wrapper(m_Customer.getCustkey(), null, 0);
 		}
 
+		
+		// We collect the list of all partIDs ordered by the Customer.
 		// Sorting HashSet using List
 		List<Integer> allLines = new ArrayList<Integer>(orders.size());
 
@@ -254,6 +251,9 @@ public class TopJaccard {
 				allLines.add(lineItem.getPart().getPartID());
 			}
 		}
+		
+		
+		
 
 		// ######################
 		// ### QUERY Processing
@@ -275,7 +275,7 @@ public class TopJaccard {
 				break;
 
 			// first, loop to the last repeated value
-			while (posInThis + 1 < allLines.size() && allLines.get(posInThis) == allLines.get(posInThis + 1)) {
+			while (posInThis + 1 < allLines.size() && allLines.get(posInThis).intValue() == allLines.get(posInThis + 1).intValue()) {
 				posInThis++;
 			}
 
@@ -293,6 +293,8 @@ public class TopJaccard {
 			}
 		}
 
+
+		
 		// and get the number of unique items in the list of parts
 		int numUnique = 0;
 		posInThis = 0;
