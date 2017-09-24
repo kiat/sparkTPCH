@@ -386,19 +386,23 @@ public class JaccardSimilarityQuery implements Serializable {
 		        return Double.compare(score_1._1, score_2._1);
 		    }
 		}	
-		
-//		jaccardSimilarityScore.foreach(new VoidFunction<Tuple2<Double, Tuple2<Integer,List<Integer>>>> (){
-//			
-//			private static final long serialVersionUID = 1310211969496211511L;
-//			
-//			@Override
-//			public void call(Tuple2<Double, Tuple2<Integer, List<Integer>>> data) {
-//		        //System.out.println("Customer key: "+ data._2._1 + " Similarity Score: " + data._1 + "\nParts:" + data._2._2);	
-//			}
-//
-//		});
-				
+						
 		jaccardSimilarityScore.top(topKValue, new TupleComparator ());
+		
+		System.out.println("Total after topK " + topKValue + " is: " +jaccardSimilarityScore.count());
+		
+		// print the topK entries
+		jaccardSimilarityScore.foreach(new VoidFunction<Tuple2<Double, Tuple2<Integer,List<Integer>>>> (){
+		
+			private static final long serialVersionUID = 1310211969496211511L;
+			
+			@Override
+			public void call(Tuple2<Double, Tuple2<Integer, List<Integer>>> data) {
+		        System.out.println("Customer key: "+ data._2._1 + " Similarity Score: " + data._1 + "\nParts:" + data._2._2);	
+			}
+
+	    });
+		
 	    
 		int finalResultCount=0;
 		
