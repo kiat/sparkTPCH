@@ -347,11 +347,13 @@ public class JaccardSimilarityQuery implements Serializable {
 				    
 				}						
 				
-				Double similarityValue = new Double(0.0);
+//				Double similarityValue = new Double(0.0);
 
 				// Prevents divided by zero errors
-				if (totalUniquePartsID.size()!=0)
-					 similarityValue = new Double((double)(inCommon.size() / totalUniquePartsID.size()));
+//				if (totalUniquePartsID.size()!=0){
+				Double similarityValue = new Double((double)(inCommon.size() / totalUniquePartsID.size()));
+				System.out.print("; score " + similarityValue + " | " + similarityValue.toString());
+//				}
 				
 				// adds the similarity along with part ID's purchased by this Customer
 				Tuple2<Integer, List<Integer>> innerTuple = 
