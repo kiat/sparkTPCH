@@ -32,6 +32,7 @@ import edu.rice.dmodel.LineItem;
 import edu.rice.dmodel.MyKryoRegistrator;
 import edu.rice.dmodel.Order;
 import edu.rice.dmodel.Part;
+import edu.rice.dmodel.Wrapper;
 
 /**
  * This is a class for computing a Top-K Similarity Query using
@@ -207,14 +208,16 @@ public class JaccardSimilarityQuery implements Serializable {
 		// Now is data loaded in RDD, ready for the experiment
 		// Start the timer
 		startQueryTimestamp = System.nanoTime();
+
+		System.out.println("Number of Original Customers in RDD: " + customerRDD.count());
 		
 		// flatMap to pair <Customer.key, List<PartID>>
 		// returns pairs with the customerKey and a list with all partsId for each
 		// customer
 		JavaPairRDD<Integer, List<Integer>> allPartsIDsPerCustomer = 
-			customerRDD.flatMapToPair(new PairFlatMapFunction<Customer, 			// Input Object: A Customer
-															  Integer,				// Customer key
-															  List<Integer>>() {	// Value returned: A List of all parts Id's
+			customerRDD.flatMapToPair(new PairFlatMapFunction<Customer, 			// Type of Input Object: A Customer
+															  Integer,				// Key: Customer
+															  List<Integer>>() {	// Value: A List of all parts Id's
 																					// from all orders for each customer
 	
 				private static final long serialVersionUID = 1932241819871271488L;
@@ -249,23 +252,23 @@ public class JaccardSimilarityQuery implements Serializable {
 						}
 						// sorts partId's
 						Collections.sort(listOfPartsIds, (a, b) -> b.compareTo(a));
-						// adds the parts for this Order
-						returnTuple.add(new Tuple2<Integer, List<Integer>>(new Integer(customer.getCustkey()), listOfPartsIds));
 					}
+					// creates the tuple to be returned, with the Customer.key and a List<PartsId>
+					returnTuple.add(new Tuple2<Integer, List<Integer>>(new Integer(customer.getCustkey()), listOfPartsIds));
 					
 					return returnTuple.iterator();
 				}
 			});
 		
-		System.out.println("Total after 1st map " + allPartsIDsPerCustomer.count());
+		System.out.println("Total customers after 1st map " + allPartsIDsPerCustomer.count());
 		
 		// Now, let's compute Jaccard Similarity
-		// returns the SimilarityScore and a tuple <Customer.key, and the list of PartID's>
+		// returns the SimilarityScore and a tuple <Similarity score, and the list of PartID's>
 		// for each customer
 		JavaPairRDD<Double, Tuple2<Integer, List<Integer>>> jaccardSimilarityScore = 
 				allPartsIDsPerCustomer.flatMapToPair(new PairFlatMapFunction<Tuple2<Integer, List<Integer>>,	// Type of input RDD
-													Double,													    // Key: Similarity
-													Tuple2<Integer, List<Integer>>>() {							// Returned value
+													Double,													    // Key: Similarity value
+													Tuple2<Integer, List<Integer>>>() {							// Value: Customer.key and List<PartsId>
 		
 			private static final long serialVersionUID = 2009241861741271488L;
 
@@ -278,11 +281,11 @@ public class JaccardSimilarityQuery implements Serializable {
 				Collections.sort(customerListOfPartsIds);						
 				Collections.sort(queryListOfPartsIds);
 				
-				// will store the common PartID's
+				// will store the common PartID's in this List
 				List<Integer> inCommon = 
 					    new ArrayList<Integer>();
 
-				// will store all PartID's (repeated counts only one)
+				// will store all PartID's (repeated counts only one) in this List
 				List<Integer> totalUniquePartsID = 
 					    new ArrayList<Integer>();	
 				
@@ -368,10 +371,6 @@ public class JaccardSimilarityQuery implements Serializable {
 			}
 		});
 		
-		// Return the top 10 entries in the RDD, the key is the 
-		// similarity score.
-		// is printing on workers for debugging purposes
-		// TODO: print after the top
 		System.out.println("Total after 2nd map " +jaccardSimilarityScore.count());
 		
 		// Comparator class for comparing similarity results, to be used in top and
@@ -386,23 +385,21 @@ public class JaccardSimilarityQuery implements Serializable {
 		        return Double.compare(score_1._1, score_2._1);
 		    }
 		}	
-						
-		jaccardSimilarityScore.top(topKValue, new TupleComparator ());
-		
-		System.out.println("Total after topK " + topKValue + " is: " +jaccardSimilarityScore.count());
-		
-		// print the topK entries
-		jaccardSimilarityScore.foreach(new VoidFunction<Tuple2<Double, Tuple2<Integer,List<Integer>>>> (){
-		
-			private static final long serialVersionUID = 1310211969496211511L;
-			
-			@Override
-			public void call(Tuple2<Double, Tuple2<Integer, List<Integer>>> data) {
-		        System.out.println("Customer key: "+ data._2._1 + " Similarity Score: " + data._1 + "\nParts:" + data._2._2);	
-			}
 
-	    });
+		// Return the top 10 entries in the RDD, the key is the 
+		// similarity score.
 		
+		List<Tuple2<Double, Tuple2<Integer, List<Integer>>>> topKResults = jaccardSimilarityScore.top(topKValue, new TupleComparator ());
+		
+		System.out.println("Total after topK " + topKValue + " is: " +topKResults.size());
+				
+		// print the topK entries
+		for (Tuple2<Double, Tuple2<Integer, List<Integer>>>  resultItem : topKResults) {
+	        System.out.println("Customer key: "+ resultItem._2._1 + 
+	        				   " Similarity Score: " + resultItem._1 + 
+	        				   "\nParts:" + resultItem._2._2);	
+		}
+				
 	    
 		int finalResultCount=0;
 		
