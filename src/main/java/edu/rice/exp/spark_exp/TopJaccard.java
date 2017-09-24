@@ -29,7 +29,7 @@ public class TopJaccard {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
 		// this is our query
-		int[] thisIsAnIntArray = {90, 342, 528, 678, 957, 1001, 1950, 2022, 2045, 2345, 3238, 4456, 5218, 5301, 5798, 6001, 6119, 6120, 6153, 6670, 6715,
+		int[] thisIsAnIntArray = { 90, 342, 528, 678, 957, 1001, 1950, 2022, 2045, 2345, 3238, 4456, 5218, 5301, 5798, 6001, 6119, 6120, 6153, 6670, 6715,
 				6896, 7000, 7109, 7400, 7542, 8000, 10024, 10030, 10316, 10400, 10534, 11000, 11635, 11700, 11884, 11900, 12413, 14511, 15000, 15594, 15700,
 				15760, 16000, 16976, 17000, 17002, 17003, 17035, 18437, 19000, 20848, 21000, 22004, 22202, 22203, 22339, 22400, 23984, 24000, 24180, 25000,
 				26284, 27000, 27182, 28000, 28268, 28500, 28530, 29000, 31060, 31500, 32388, 32400, 32428, 32774, 33000, 33023, 34000, 34055, 34300, 34385,
@@ -188,30 +188,13 @@ public class TopJaccard {
 				return processCustomer(m_Customer, myQuery);
 			}
 		});
-		
-		
-		
-		
-		
-		
 
-//		List<Wrapper> results = myMappedData.top(10);
-		
-		List<Wrapper> results = myMappedData.collect();
-
+		List<Wrapper> results = myMappedData.top(10);
 
 		for (Wrapper wrapper : results) {
 			System.out.println(wrapper);
 		}
 
-		
-		
-		
-		
-		
-		
-		
-		
 		// Stop the timer
 		finalTimestamp = System.nanoTime();
 
@@ -243,28 +226,6 @@ public class TopJaccard {
 		sc.stop();
 
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 
 	public static Wrapper processCustomer(Customer m_Customer, List<Integer> myQuery) {
 
@@ -288,9 +249,6 @@ public class TopJaccard {
 			}
 		}
 
-		// sort the list
-		Collections.sort(partIDSortedList);
-
 		// ######################
 		// ### QUERY Processing
 		// ######################
@@ -299,6 +257,9 @@ public class TopJaccard {
 
 		List<Integer> allLines = partIDSortedList;
 		List<Integer> origList = myQuery;
+
+		// sort the list
+		Collections.sort(allLines);
 
 		// will store the common PartID's
 		List<Integer> inCommon = new ArrayList<Integer>();
@@ -317,13 +278,13 @@ public class TopJaccard {
 			}
 
 			// next, see if the two are the same
-			if (allLines.get(posInThis) == origList.get(posInOrig)) {
+			if ((int) allLines.get(posInThis) == (int) origList.get(posInOrig)) {
+
 				inCommon.add(allLines.get(posInThis));
 				posInThis++;
 				posInOrig++;
-
 				// otherwise, advance the smaller one
-			} else if (allLines.get(posInThis) < origList.get(posInOrig)) {
+			} else if ((int) allLines.get(posInThis) < (int) origList.get(posInOrig)) {
 				posInThis++;
 			} else {
 				posInOrig++;
@@ -339,7 +300,7 @@ public class TopJaccard {
 				break;
 
 			// loop to the last repeated value
-			while (posInThis + 1 < allLines.size() && allLines.get(posInThis) == allLines.get(posInThis + 1))
+			while (posInThis + 1 < allLines.size() && (int) allLines.get(posInThis) == (int) allLines.get(posInThis + 1))
 				posInThis++;
 
 			// saw another unique
@@ -351,7 +312,7 @@ public class TopJaccard {
 		double similarityValue = ((double) inCommon.size()) / (double) (numUnique + numUniqueInQuery - inCommon.size());
 
 		// make a new wrapper object and return
-		return new Wrapper(m_Customer.getCustkey(), partIDSortedList, similarityValue);
+		return new Wrapper(m_Customer.getCustkey(), inCommon, similarityValue);
 	}
 
 }
