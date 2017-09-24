@@ -254,6 +254,7 @@ public class JaccardSimilarityQuery implements Serializable {
 						}
 						// sorts partId's
 						Collections.sort(listOfPartsIds, (a, b) -> b.compareTo(a));
+						System.out.println("Size of entries " + listOfPartsIds.size());
 						// creates the tuple to be returned, with the Customer.key and a List<PartsId>
 						returnTuple.add(new Tuple2<Integer, List<Integer>>(new Integer(customer.getCustkey()), listOfPartsIds));
 						
@@ -294,6 +295,7 @@ public class JaccardSimilarityQuery implements Serializable {
 								
 				int indexQueryList = 0;
 				int indexCustoList = 0;
+				System.out.println("In calc Size of entries " + customerListOfPartsIds.size());
 
 				// iterates until the end of the shortest list is reached
 				while(indexQueryList < queryListOfPartsIds.size() && 
@@ -354,7 +356,7 @@ public class JaccardSimilarityQuery implements Serializable {
 				//double calculate = ((double)inCommon.size() / (double)totalUniquePartsID.size());
 				Double similarityValue = new Double(((double)inCommon.size() / (double)totalUniquePartsID.size()));
 //				if (inCommon.size()>0) 
-					System.out.println("; query size: " +queryListOfPartsIds.size() + " | Common: "+ inCommon.size() + " | score " + similarityValue + " | " + similarityValue.toString());
+//					System.out.println("; query size: " +queryListOfPartsIds.size() + " | Common: "+ inCommon.size() + " | score " + similarityValue + " | " + similarityValue.toString());
 //				}
 				
 				// adds the similarity along with part ID's purchased by this Customer
