@@ -211,7 +211,7 @@ public class JaccardSimilarityQuery implements Serializable {
 		// Start the timer
 		startQueryTimestamp = System.nanoTime();
 
-		System.out.println("Number of Original Customers in RDD: " + customerRDD.count());
+//		System.out.println("Number of Original Customers in RDD: " + customerRDD.count());
 		
 		// flatMap to pair <Customer.key, List<PartID>>
 		// returns pairs with the customerKey and a list with all partsId for each
@@ -262,7 +262,7 @@ public class JaccardSimilarityQuery implements Serializable {
 				}
 			});
 		
-		System.out.println("Total customers after 1st map " + allPartsIDsPerCustomer.count());
+//		System.out.println("Total customers after 1st map " + allPartsIDsPerCustomer.count());
 		
 		// Now, let's compute Jaccard Similarity
 		// returns the SimilarityScore and a tuple <Similarity score, and the list of PartID's>
@@ -373,7 +373,7 @@ public class JaccardSimilarityQuery implements Serializable {
 			}
 		});
 		
-		System.out.println("Total after 2nd map " +jaccardSimilarityScore.count());
+//		System.out.println("Total after 2nd map " +jaccardSimilarityScore.count());
 		
 		// Comparator class for comparing similarity results, to be used in top and
 		// prevent serialization error by implementing Serializable
