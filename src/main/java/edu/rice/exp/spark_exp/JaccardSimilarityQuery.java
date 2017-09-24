@@ -377,7 +377,7 @@ public class JaccardSimilarityQuery implements Serializable {
 			
 			@Override
 			public void call(Tuple2<Double, Tuple2<Integer, List<Integer>>> data) {
-		        System.out.println("Customer key: "+ data._2._1 + " Similarity Score: " + data._1 + "\nParts:" + data._2._2);	
+		        //System.out.println("Customer key: "+ data._2._1 + " Similarity Score: " + data._1 + "\nParts:" + data._2._2);	
 			}
 
 		});
