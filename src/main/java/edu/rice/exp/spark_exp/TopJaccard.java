@@ -30,9 +30,6 @@ public class TopJaccard {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
-		// this is our query
-		Integer[] myQuery = null;
-
 		System.out.println("numUniqueInQuery=" + numUniqueInQuery);
 
 		// can be overwritten by the fourth command line arg
@@ -133,18 +130,20 @@ public class TopJaccard {
 		
 		try (BufferedReader br = new BufferedReader(new FileReader(inputQueryFile))) {
 			String line;
-			int numItems = 0;
 			while ((line = br.readLine()) != null) {
 				listOfParts = line.split(",");
-				for(int i=numItems;i < listOfParts.length;i++) {
-					myQuery[numItems] = Integer.valueOf(listOfParts[numItems]);
-					numItems++;						
-				}
 			}
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+
+		// this is our query
+		Integer[] myQuery = new Integer[listOfParts.length];
+		
+		for(int i=0;i < listOfParts.length;i++) {
+			myQuery[i] = Integer.valueOf(listOfParts[i]);
 		}
 		
 		int m_index = 0;
