@@ -187,7 +187,7 @@ public class TopJaccard {
 			for (Order  order : myOrders) {
 				List<LineItem> myItems = order.getLineItems();
 				for (LineItem  item : myItems) {				
-				    System.out.println(item.toString());
+				    System.out.print(item.getPart().getPartID() + ",");
 				}
 			}
 		}		
