@@ -85,6 +85,8 @@ public class TopJaccard {
 		// Default name of file with query data represented as
 		// a comma separated text file, e.g. 222,543,22,56,23
 		String inputQueryFile = "jaccardInput";	
+		
+		JavaRDD<Customer> customerRDD = null;
 				
 		// can be overwritten by the 4rd command line arg
 		// 0 = the query time doesn't include count nor count.distinct
@@ -141,10 +143,14 @@ public class TopJaccard {
 
 		System.out.println("Application Id: " + sc.sc().applicationId());	
 				
-		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
-		System.out.println("Loading data from hdfs at: " + hdfsNameNodePath + NUMBER_OF_COPIES);
-		customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());		
-		
+		if (hdfsNameNodePath=="memory") {
+			System.out.println("Loading data from DataGenerator. ");						
+			customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions); 
+		} else {
+			customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
+			System.out.println("Loading data from hdfs at: " + hdfsNameNodePath + NUMBER_OF_COPIES);
+		}
+					
 		// Print application Id so it can be used via REST API to analyze processing
 		// times		
 		System.out.println("The query parts ID's are: [");
@@ -181,7 +187,7 @@ public class TopJaccard {
 		List<Customer> customerForPrint = customerRDD.collect();
 		
 		for (Customer  resultItem : customerForPrint) {
-	        System.out.println("---> Customer key: "+ resultItem.getCustkey());
+	        System.out.println("\n---> Customer key: "+ resultItem.getCustkey());
 			List<Order> myOrders = resultItem.getOrders();
  
 			for (Order  order : myOrders) {
