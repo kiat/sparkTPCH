@@ -141,8 +141,8 @@ public class TopJaccard {
 
 		// TODO Remove when it is run on Chluser
 		// these are obly for running local
-		PropertyConfigurator.configure("log4j.properties");
-		conf.setMaster("local[*]");
+//		PropertyConfigurator.configure("log4j.properties");
+//		conf.setMaster("local[*]");
 
 		// Kryo Serialization
 		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
