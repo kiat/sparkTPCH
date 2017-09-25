@@ -166,7 +166,14 @@ public class TopJaccard {
 		// times
 		System.out.println("Application Id: " + sc.sc().applicationId());
 		
-		System.out.println("The query parts ID's are: " + myQuery.toString() );
+		System.out.println("The query parts ID's are: [");
+
+		for(int i=0;i < myQuery.length;i++) {
+			if (i==0) System.out.print(myQuery[i]);
+			else System.out.print("," + myQuery[i]);
+		}
+		
+		System.out.println("]");		
 		
 		conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
 		conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
