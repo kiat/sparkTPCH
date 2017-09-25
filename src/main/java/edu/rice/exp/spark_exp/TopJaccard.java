@@ -155,8 +155,8 @@ public class TopJaccard {
 				while ((line = br.readLine()) != null) {
 					listOfParts = line.split(",");
 					for(int i=numItems;i < listOfParts.length;i++) {
-						numItems++;
 						myQuery[numItems] = new Integer(listOfParts[numItems]);
+						numItems++;						
 					}
 				}
 			} catch (FileNotFoundException e) {
