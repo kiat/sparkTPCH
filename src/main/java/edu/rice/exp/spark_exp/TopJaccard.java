@@ -145,7 +145,7 @@ public class TopJaccard {
 		// If this arg is not provided, it uses a default
 		// hard-coded list stored in the variable myQuery
 		if (args.length > 5) {		
-		    inputQueryFile = args[1];
+		    inputQueryFile = args[5];
 
 			String[] listOfParts = null;
 			
