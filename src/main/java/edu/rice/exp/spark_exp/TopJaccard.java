@@ -181,8 +181,15 @@ public class TopJaccard {
 		List<Customer> customerForPrint = customerRDD.collect();
 		
 		for (Customer  resultItem : customerForPrint) {
-	        System.out.println("Customer key: "+ resultItem.getCustkey() + 
-	        				   "nParts: " + resultItem.getOrders().toString());	
+	        System.out.println("---> Customer key: "+ resultItem.getCustkey());
+			List<Order> myOrders = resultItem.getOrders();
+ 
+			for (Order  order : myOrders) {
+				List<LineItem> myItems = order.getLineItems();
+				for (LineItem  item : myItems) {				
+				    System.out.println(item.toString());
+				}
+			}
 		}		
 			
 		// #############################################
