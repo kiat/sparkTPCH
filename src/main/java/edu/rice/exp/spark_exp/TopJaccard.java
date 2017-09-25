@@ -31,7 +31,7 @@ public class TopJaccard {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
 		// this is our query
-		Integer[] myQuery = null;
+		Integer[] myQuery = new Integer[];
 
 		System.out.println("numUniqueInQuery=" + numUniqueInQuery);
 
@@ -137,7 +137,7 @@ public class TopJaccard {
 			while ((line = br.readLine()) != null) {
 				listOfParts = line.split(",");
 				for(int i=numItems;i < listOfParts.length;i++) {
-					myQuery[numItems] = new Integer(listOfParts[numItems]);
+					myQuery[numItems] = Integer.valueOf(listOfParts[numItems]);
 					numItems++;						
 				}
 			}
