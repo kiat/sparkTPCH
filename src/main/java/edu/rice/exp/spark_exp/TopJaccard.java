@@ -143,7 +143,7 @@ public class TopJaccard {
 		Integer[] myQuery = new Integer[listOfParts.length];
 		
 		for(int i=0;i < listOfParts.length;i++) {
-			myQuery[i] = Integer.valueOf(listOfParts[i]);
+			myQuery[i] = Integer.parseInt(listOfParts[i]);
 		}
 		
 		int m_index = 0;

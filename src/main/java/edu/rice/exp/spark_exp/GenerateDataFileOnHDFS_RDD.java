@@ -101,18 +101,26 @@ public class GenerateDataFileOnHDFS_RDD {
 		JavaRDD<Customer> customerRDD_raw = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);
 
 		JavaRDD<Customer> customerRDD = customerRDD_raw;
+		
+		if (NUMBER_OF_COPIES==1){
+			System.out.println("Saving the dataset for 1");
+			// coalesce the RDD based on number of partitions.				
+			customerRDD = customerRDD.coalesce(numPartitions);	
+			customerRDD.saveAsObjectFile(hdfsNameNodePath + (1));			
+		} else {
 
-		// Copy the same data multiple times to make it big data
-		for (int i = 1; i < NUMBER_OF_COPIES; i++) {
-			customerRDD = customerRDD.union(customerRDD_raw);
-
-			System.out.println("Appending set-> " + i);
-			
-			if (numberOfCopies_set.contains((i+1))) {
-				System.out.println("Saving the dataset for " + i);
-				// coalesce the RDD based on number of partitions.				
-				customerRDD = customerRDD.coalesce(numPartitions);	
-				customerRDD.saveAsObjectFile(hdfsNameNodePath + (i+1));
+			// Copy the same data multiple times to make it big data
+			for (int i = 1; i < NUMBER_OF_COPIES; i++) {
+				customerRDD = customerRDD.union(customerRDD_raw);
+	
+				System.out.println("Appending set-> " + i);
+				
+				if (numberOfCopies_set.contains((i+1))) {
+					System.out.println("Saving the dataset for " + i);
+					// coalesce the RDD based on number of partitions.				
+					customerRDD = customerRDD.coalesce(numPartitions);	
+					customerRDD.saveAsObjectFile(hdfsNameNodePath + (i+1));
+				}
 			}
 		}
 
