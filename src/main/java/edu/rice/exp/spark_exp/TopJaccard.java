@@ -30,6 +30,7 @@ public class TopJaccard {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
+		// this is our query		
 		Integer[] myQuery = {90, 342, 528, 678, 957, 1001, 1950, 2022, 2045, 2345, 3238, 4456, 5218, 5301, 5798, 6001, 6119, 6120, 6153, 6670, 6715, 6896, 7000,
 				7109, 7400, 7542, 8000, 10024, 10030, 10316, 10400, 10534, 11000, 11635, 11700, 11884, 11900, 12413, 14511, 15000, 15594, 15700, 15760, 16000,
 				16976, 17000, 17002, 17003, 17035, 18437, 19000, 20848, 21000, 22004, 22202, 22203, 22339, 22400, 23984, 24000, 24180, 25000, 26284, 27000,
@@ -83,9 +84,7 @@ public class TopJaccard {
 		// Default name of file with query data represented as
 		// a comma separated text file, e.g. 222,543,22,56,23
 		String inputQueryFile = "jaccardInput";	
-		
-		JavaRDD<Customer> customerRDD = null;	
-		
+				
 		// can be overwritten by the 4rd command line arg
 		// 0 = the query time doesn't include count nor count.distinct
 		// (thus calculated time includes reading from HDFS)
@@ -115,8 +114,15 @@ public class TopJaccard {
 		// conf.set("spark.speculation", "true");
 
 		conf.set("spark.shuffle.spill", "true");
+		
+		System.out.println("Application Id: " + sc.sc().applicationId());	
+		
+		conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
+		conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
 
-		JavaSparkContext sc = new JavaSparkContext(conf);		
+		conf.set("fs.local.block.size", "268435456");	
+
+		JavaSparkContext sc = new JavaSparkContext(conf);
 
 		if (args.length > 1)
 			fileScale = args[1];
@@ -124,25 +130,29 @@ public class TopJaccard {
 		if (args.length > 2)
 			numPartitions = Integer.parseInt(args[2]);
 
+		// Get the initial time
+		startTime = System.nanoTime();
+
 		// if third arg is provided use that and read from hdfs
 		if (args.length > 3){
 			hdfsNameNodePath = args[3];
-			customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
-			System.out.println("Loading data from hdfs at: " + hdfsNameNodePath + NUMBER_OF_COPIES);			
 			
-		} else {
-			System.out.println("Loading data from DataGenerator. ");						
-			// otherwise, generate from files
-			customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);			
 		}
+		
+		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
+		System.out.println("Loading data from hdfs at: " + hdfsNameNodePath + NUMBER_OF_COPIES);			
+		
+//		else {
+//			System.out.println("Loading data from DataGenerator. ");						
+//			// otherwise, generate from files
+//			JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);			
+//		}
 
 		if (args.length > 4)
 			warmCache = Integer.parseInt(args[4]);
 					
 		// Print application Id so it can be used via REST API to analyze processing
-		// times
-		System.out.println("Application Id: " + sc.sc().applicationId());
-		
+		// times		
 		System.out.println("The query parts ID's are: [");
 
 		for(int i=0;i < myQuery.length;i++) {
@@ -152,14 +162,6 @@ public class TopJaccard {
 		
 		System.out.println("]");		
 		
-		conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
-		conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
-
-		conf.set("fs.local.block.size", "268435456");
-
-		// Get the initial time
-		startTime = System.nanoTime();
-
 		readFileTime = System.nanoTime();
 
 		 if (warmCache == 1) {
