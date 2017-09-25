@@ -1,6 +1,8 @@
 package edu.rice.exp.spark_exp;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -78,7 +80,13 @@ public class TopJaccard {
 
 		// TODO this is not used and should be removed
 		String fileScale = "0.2";
-
+		
+		// Default name of file with query data represented as
+		// a comma separated text file, e.g. 222,543,22,56,23
+		String inputQueryFile = "jaccardInput";	
+		
+		JavaRDD<Customer> customerRDD = null;	
+		
 		// can be overwritten by the 4rd command line arg
 		// 0 = the query time doesn't include count nor count.distinct
 		// (thus calculated time includes reading from HDFS)
@@ -87,29 +95,17 @@ public class TopJaccard {
 
 		if (args.length > 0)
 			NUMBER_OF_COPIES = Integer.parseInt(args[0]);
-
-		if (args.length > 1)
-			fileScale = args[1];
-
-		if (args.length > 2)
-			numPartitions = Integer.parseInt(args[2]);
-
-		if (args.length > 3)
-			hdfsNameNodePath = args[3];
-
-		if (args.length > 4)
-			warmCache = Integer.parseInt(args[4]);
-
+		
 		long numberOfCustomers = 0;
 		long numberOfDistinctCustomers = 0;
 
 		SparkConf conf = new SparkConf();
-		conf.setAppName("ComplexObjectManipulation_RDD " + NUMBER_OF_COPIES);
+		conf.setAppName("TopJaccard-" + NUMBER_OF_COPIES);
 
 		// TODO Remove when it is run on Chluser
 		// these are obly for running local
-		PropertyConfigurator.configure("log4j.properties");
-		conf.setMaster("local[*]");
+//		PropertyConfigurator.configure("log4j.properties");
+//		conf.setMaster("local[*]");
 
 		// Kryo Serialization
 		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
@@ -121,7 +117,54 @@ public class TopJaccard {
 
 		conf.set("spark.shuffle.spill", "true");
 
-		JavaSparkContext sc = new JavaSparkContext(conf);
+		JavaSparkContext sc = new JavaSparkContext(conf);		
+
+		if (args.length > 1)
+			fileScale = args[1];
+
+		if (args.length > 2)
+			numPartitions = Integer.parseInt(args[2]);
+
+		// if third arg is provided use that and read from hdfs
+		if (args.length > 3){
+			hdfsNameNodePath = args[3];
+			customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
+			
+		} else {
+			// otherwise, generate from files
+			customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);			
+		}
+
+		if (args.length > 4)
+			warmCache = Integer.parseInt(args[4]);
+		
+		// if a 6th arg is provided it contains the name of 
+		// a comma separated file with the part Id's to be
+		// used by the query.
+		// This assumes well-formed numbers!!!!
+		// If this arg is not provided, it uses a default
+		// hard-coded list stored in the variable myQuery
+		if (args.length > 5) {		
+		    inputQueryFile = args[1];
+
+			String[] listOfParts = null;
+			
+			try (BufferedReader br = new BufferedReader(new FileReader(inputQueryFile))) {
+				String line;
+				int numItems = 0;
+				while ((line = br.readLine()) != null) {
+					listOfParts = line.split(",");
+					for(int i=numItems;i < listOfParts.length;i++) {
+						numItems++;
+						myQuery[numItems] = new Integer(listOfParts[numItems]);
+					}
+				}
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}			
+		}
 
 		// Print application Id so it can be used via REST API to analyze processing
 		// times
@@ -135,8 +178,6 @@ public class TopJaccard {
 		// Get the initial time
 		startTime = System.nanoTime();
 
-		// JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
-		JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);
 		readFileTime = System.nanoTime();
 
 		// if (warmCache == 1) {
