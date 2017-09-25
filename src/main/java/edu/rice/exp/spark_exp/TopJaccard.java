@@ -3,9 +3,9 @@ package edu.rice.exp.spark_exp;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.PriorityQueue;
 
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
@@ -23,40 +23,34 @@ import edu.rice.generate_data.DataGenerator;
 public class TopJaccard {
 
 	// the capacity of priority queue is 10
-	public static PriorityQueue<Wrapper> topKQueue;
 	public static int numUniqueInQuery = 0;
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
 		// this is our query
-		int[] thisIsAnIntArray = { 90, 342, 528, 678, 957, 1001, 1950, 2022, 2045, 2345, 3238, 4456, 5218, 5301, 5798, 6001, 6119, 6120, 6153, 6670, 6715,
-				6896, 7000, 7109, 7400, 7542, 8000, 10024, 10030, 10316, 10400, 10534, 11000, 11635, 11700, 11884, 11900, 12413, 14511, 15000, 15594, 15700,
-				15760, 16000, 16976, 17000, 17002, 17003, 17035, 18437, 19000, 20848, 21000, 22004, 22202, 22203, 22339, 22400, 23984, 24000, 24180, 25000,
-				26284, 27000, 27182, 28000, 28268, 28500, 28530, 29000, 31060, 31500, 32388, 32400, 32428, 32774, 33000, 33023, 34000, 34055, 34300, 34385,
-				36745, 37000, 37232, 37500, 37990, 38000, 3982 };
+		Integer[] myQuery = {90, 342, 528, 678, 957, 1001, 1950, 2022, 2045, 2345, 3238, 4456, 5218, 5301, 5798, 6001, 6119, 6120, 6153, 6670, 6715, 6896, 7000,
+				7109, 7400, 7542, 8000, 10024, 10030, 10316, 10400, 10534, 11000, 11635, 11700, 11884, 11900, 12413, 14511, 15000, 15594, 15700, 15760, 16000,
+				16976, 17000, 17002, 17003, 17035, 18437, 19000, 20848, 21000, 22004, 22202, 22203, 22339, 22400, 23984, 24000, 24180, 25000, 26284, 27000,
+				27182, 28000, 28268, 28500, 28530, 29000, 31060, 31500, 32388, 32400, 32428, 32774, 33000, 33023, 34000, 34055, 34300, 34385, 36745, 37000,
+				37232, 37500, 37990, 38000, 3982};
 
-		List<Integer> myQuery = new ArrayList<Integer>();
-		topKQueue = new PriorityQueue<Wrapper>(10);
-
-		for (int i : thisIsAnIntArray) {
-			myQuery.add(i);
-		}
-
-		System.out.println(myQuery);
 
 		int m_index = 0;
+
 		while (true) {
-			if (m_index == myQuery.size())
+			if (m_index == myQuery.length)
 				break;
+			
 			// loop to the last repeated value
-			while (m_index + 1 < myQuery.size() && myQuery.get(m_index) == myQuery.get(m_index + 1)) {
+			while (m_index + 1 < myQuery.length && myQuery[m_index].intValue() == myQuery[m_index + 1].intValue())
 				m_index++;
-			}
+		
 
 			// saw another unique
 			numUniqueInQuery++;
 			m_index++;
 		}
+		
 
 		System.out.println("numUniqueInQuery=" + numUniqueInQuery);
 
@@ -188,10 +182,10 @@ public class TopJaccard {
 			}
 		});
 
-		// Then we get the top 10 Results 
+		// Then we get the top 10 Results
 		List<Wrapper> results = myMappedData.top(10);
 
-		// We print out the results 
+		// We print out the results
 		for (Wrapper wrapper : results) {
 			System.out.println(wrapper);
 		}
@@ -228,7 +222,7 @@ public class TopJaccard {
 
 	}
 
-	public static Wrapper processCustomer(Customer m_Customer, List<Integer> origList) {
+	public static Wrapper processCustomer(Customer m_Customer, Integer[] origList) {
 
 		List<Order> orders = m_Customer.getOrders();
 
@@ -237,23 +231,30 @@ public class TopJaccard {
 			return new Wrapper(m_Customer.getCustkey(), null, 0);
 		}
 
-		
 		// We collect the list of all partIDs ordered by the Customer.
 		// Sorting HashSet using List
-		List<Integer> allLines = new ArrayList<Integer>(orders.size());
+		// List<Integer> allLines = new ArrayList<Integer>(orders.size());
 
+		// new, we figure out how many parts there are in this customer object
+		int totParts = 0;
+
+		for (Order order : orders) {
+			totParts += order.getLineItems().size();
+		}
+
+		Integer[] allLines = new Integer[totParts];
+
+		int m_index=0;
 		// iterates over all orders for a customer
 		for (Order order : orders) {
 			List<LineItem> lineItems = order.getLineItems();
 
 			// iterates over the items in an order
 			for (LineItem lineItem : lineItems) {
-				allLines.add(lineItem.getPart().getPartID());
+				allLines[m_index] =new Integer(lineItem.getPart().getPartID());
+				m_index++;
 			}
 		}
-		
-		
-		
 
 		// ######################
 		// ### QUERY Processing
@@ -261,8 +262,10 @@ public class TopJaccard {
 		// now we run the query on top of that
 
 		// sort the list
-		Collections.sort(allLines);
+//		Arrays.sort(allLines, Collections.reverseOrder());
+		Arrays.sort(allLines);
 
+		
 		// will store the common PartID's
 		List<Integer> inCommon = new ArrayList<Integer>();
 		int posInOrig = 0;
@@ -271,46 +274,48 @@ public class TopJaccard {
 		while (true) {
 
 			// if we got to the end of either, break
-			if (posInThis == allLines.size() || posInOrig == origList.size())
+			if (posInThis == allLines.length || posInOrig == origList.length)
 				break;
 
 			// first, loop to the last repeated value
-			while (posInThis + 1 < allLines.size() && allLines.get(posInThis).intValue() == allLines.get(posInThis + 1).intValue()) {
+			while (posInThis + 1 < allLines.length && allLines[posInThis].intValue() == allLines[posInThis+1].intValue())
 				posInThis++;
-			}
+			
 
 			// next, see if the two are the same
-			if (allLines.get(posInThis).intValue() == origList.get(posInOrig).intValue()) {
+			if (allLines[posInThis].intValue() == origList[posInOrig].intValue()) {
 
-				inCommon.add(allLines.get(posInThis));
+				inCommon.add(allLines[posInThis]);
+				
 				posInThis++;
 				posInOrig++;
+				
 				// otherwise, advance the smaller one
-			} else if (allLines.get(posInThis).intValue() < origList.get(posInOrig).intValue()) {
+			} else if (allLines[posInThis].intValue() < origList[posInOrig].intValue()) {
 				posInThis++;
+				
 			} else {
+				
 				posInOrig++;
 			}
 		}
 
-
-		
 		// and get the number of unique items in the list of parts
 		int numUnique = 0;
 		posInThis = 0;
+		
 		while (true) {
 
-			if (posInThis == allLines.size())
+			if (posInThis == allLines.length)
 				break;
 
 			// loop to the last repeated value
-			while (posInThis + 1 < allLines.size() && allLines.get(posInThis).intValue() == allLines.get(posInThis + 1).intValue())
+			while (posInThis + 1 < allLines.length && allLines[posInThis].intValue() == allLines[posInThis + 1].intValue())
 				posInThis++;
 
 			// saw another unique
 			numUnique++;
 			posInThis++;
-
 		}
 
 		double similarityValue = ((double) inCommon.size()) / (double) (numUnique + numUniqueInQuery - inCommon.size());

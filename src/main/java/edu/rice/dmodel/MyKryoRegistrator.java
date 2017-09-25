@@ -83,6 +83,8 @@ public class MyKryoRegistrator implements KryoRegistrator, Serializable {
 		kryo.register(edu.rice.dmodel.Wrapper.class);
 
 		kryo.register(byte[][].class);
+		kryo.register(int[].class);
+		kryo.register(Integer[].class);
 
 
 		doRegistration(kryo, "scala.collection.mutable.WrappedArray$ofRef");

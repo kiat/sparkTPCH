@@ -15,18 +15,18 @@ public class Wrapper implements Serializable, Comparable<Wrapper> {
 	private static final long serialVersionUID = 3286441147625454741L;
 
 	private Integer customerID;
-	private List<Integer> partIDs;
+	private Integer[] partIDs;
 	private double score;
 
 	public Wrapper() {
 		super();
 	}
 
-	public Wrapper(Integer customerID, List<Integer> partIDs, double score ) {
+	public Wrapper(Integer customerID, List<Integer> partIDs, double score) {
 		super();
 		this.customerID = customerID;
-		this.partIDs = partIDs;
-		this.score=score;
+		this.partIDs =toIntArray(partIDs);
+		this.score = score;
 	}
 
 	public Integer getCustomerID() {
@@ -37,11 +37,11 @@ public class Wrapper implements Serializable, Comparable<Wrapper> {
 		this.customerID = customerID;
 	}
 
-	public List<Integer> getPartIDs() {
+	public Integer[] getPartIDs() {
 		return partIDs;
 	}
 
-	public void setPartIDs(List<Integer> partIDs) {
+	public void setPartIDs(Integer[] partIDs) {
 		this.partIDs = partIDs;
 	}
 
@@ -63,13 +63,35 @@ public class Wrapper implements Serializable, Comparable<Wrapper> {
 	}
 
 	/**
-	 * A simple toString method to see what is going on. 	
+	 * A simple toString method to see what is going on.
 	 */
 	public String toString() {
 
 		String myString = "";
-		myString = "Score is: [" + this.score + " ] [Customer:" + this.customerID + "], List: " + this.partIDs + " ]";
+		myString = "Score is: [" + this.score + " ] [Customer:" + this.customerID + "], List: [";
+		
+		for (int i =0 ; i <partIDs.length; i++) {
+			myString += partIDs[i];
+			if(i<partIDs.length-1)
+			myString += ",";
+			
+		}
+		myString+=("]");
+		
+		
 		return myString;
+	}
+
+	// converts a list of Integer to int[] 
+	Integer[] toIntArray(List<Integer> list) {
+		if(list == null)
+			return null;
+		
+		Integer[] ret = new Integer[list.size()];
+
+		for (int i = 0; i < ret.length; i++)
+			ret[i] = list.get(i);
+		return ret;
 	}
 
 }
