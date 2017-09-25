@@ -14,6 +14,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
+import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.storage.StorageLevel;
 
 import scala.Tuple2;
@@ -29,13 +30,17 @@ public class TopJaccard {
 	// the capacity of priority queue is 10
 	public static int numUniqueInQuery = 0;
 	
-	public static Integer[] myQuery = {90, 342, 528, 678, 957, 1001, 1950, 2022, 2045, 2345, 3238, 4456, 5218, 5301, 5798, 6001, 6119, 6120, 6153, 6670, 6715, 6896, 7000,
-					7109, 7400, 7542, 8000, 10024, 10030, 10316, 10400, 10534, 11000, 11635, 11700, 11884, 11900, 12413, 14511, 15000, 15594, 15700, 15760, 16000,
-					16976, 17000, 17002, 17003, 17035, 18437, 19000, 20848, 21000, 22004, 22202, 22203, 22339, 22400, 23984, 24000, 24180, 25000, 26284, 27000,
-					27182, 28000, 28268, 28500, 28530, 29000, 31060, 31500, 32388, 32400, 32428, 32774, 33000, 33023, 34000, 34055, 34300, 34385, 36745, 37000,
-					37232, 37500, 37990, 38000, 3982};
+
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
+		
+		
+		Integer[] myQuery = {90, 342, 528, 678, 957, 1001, 1950, 2022, 2045, 2345, 3238, 4456, 5218, 5301, 5798, 6001, 6119, 6120, 6153, 6670, 6715, 6896, 7000,
+			7109, 7400, 7542, 8000, 10024, 10030, 10316, 10400, 10534, 11000, 11635, 11700, 11884, 11900, 12413, 14511, 15000, 15594, 15700, 15760, 16000,
+			16976, 17000, 17002, 17003, 17035, 18437, 19000, 20848, 21000, 22004, 22202, 22203, 22339, 22400, 23984, 24000, 24180, 25000, 26284, 27000,
+			27182, 28000, 28268, 28500, 28530, 29000, 31060, 31500, 32388, 32400, 32428, 32774, 33000, 33023, 34000, 34055, 34300, 34385, 36745, 37000,
+			37232, 37500, 37990, 38000, 3982};
+		
 		
 		JavaRDD<Customer> customerRDD = null;
 		
@@ -217,7 +222,15 @@ public class TopJaccard {
 //				}
 //			}
 //		}		
-			
+
+		
+		
+		Broadcast<Integer[]> broadcastedQuery= sc.broadcast(myQuery);
+
+				
+				
+		
+		
 		// #############################################
 		// #############################################
 		// ######### MAIN Experiment #############
@@ -286,7 +299,7 @@ public class TopJaccard {
 				while (true) {
 
 					// if we got to the end of either, break
-					if (posInThis == allLines.length || posInOrig == myQuery.length)
+					if (posInThis == allLines.length || posInOrig == broadcastedQuery.getValue().length)
 						break;
 
 					// first, loop to the last repeated value
@@ -295,7 +308,7 @@ public class TopJaccard {
 					
 
 					// next, see if the two are the same
-					if (allLines[posInThis].intValue() == myQuery[posInOrig].intValue()) {
+					if (allLines[posInThis].intValue() == broadcastedQuery.getValue()[posInOrig].intValue()) {
 
 						inCommon.add(allLines[posInThis]);
 						
@@ -303,7 +316,7 @@ public class TopJaccard {
 						posInOrig++;
 						
 						// otherwise, advance the smaller one
-					} else if (allLines[posInThis].intValue() < myQuery[posInOrig].intValue()) {
+					} else if (allLines[posInThis].intValue() < broadcastedQuery.getValue()[posInOrig].intValue()) {
 						posInThis++;
 						
 					} else {
