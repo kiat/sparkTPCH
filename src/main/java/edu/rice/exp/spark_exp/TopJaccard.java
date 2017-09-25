@@ -141,8 +141,8 @@ public class TopJaccard {
 
 		// TODO Remove when it is run on Chluser
 		// these are obly for running local
-		PropertyConfigurator.configure("log4j.properties");
-		conf.setMaster("local[*]");
+//		PropertyConfigurator.configure("log4j.properties");
+//		conf.setMaster("local[*]");
 
 		// Kryo Serialization
 		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
@@ -166,10 +166,10 @@ public class TopJaccard {
 		// Get the initial time
 		startTime = System.nanoTime();		
 				
-//		if (hdfsNameNodePath.equals("memory"))
+		if (hdfsNameNodePath.equals("memory"))
 			customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions); 
-//		else
-//			customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
+		else
+			customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
 
 		// Print application Id so it can be used via REST API to analyze processing
 		// times		
