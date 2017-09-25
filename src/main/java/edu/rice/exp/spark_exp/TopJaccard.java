@@ -84,9 +84,7 @@ public class TopJaccard {
 		
 		// Default name of file with query data represented as
 		// a comma separated text file, e.g. 222,543,22,56,23
-		String inputQueryFile = "jaccardInput";	
-		
-		JavaRDD<Customer> customerRDD = null;
+		String inputQueryFile = "jaccardInput";		
 				
 		// can be overwritten by the 4rd command line arg
 		// 0 = the query time doesn't include count nor count.distinct
@@ -143,14 +141,9 @@ public class TopJaccard {
 
 		System.out.println("Application Id: " + sc.sc().applicationId());	
 				
-		if (hdfsNameNodePath.equals("memory")) {
-			System.out.println("Loading data from DataGenerator. ");						
-			customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions); 
-		} else {
-			customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
-			System.out.println("Loading data from hdfs at: " + hdfsNameNodePath + NUMBER_OF_COPIES);
-		}
-					
+//		if (hdfsNameNodePath.equals("memory"))
+			JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions); 
+
 		// Print application Id so it can be used via REST API to analyze processing
 		// times		
 		System.out.println("The query parts ID's are: [");
