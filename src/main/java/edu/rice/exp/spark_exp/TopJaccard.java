@@ -31,8 +31,6 @@ public class TopJaccard {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		
-		System.out.println("numUniqueInQuery=" + numUniqueInQuery);
-
 		JavaRDD<Customer> customerRDD = null;
 		
 		// can be overwritten by the fourth command line arg
@@ -127,6 +125,8 @@ public class TopJaccard {
 			m_index++;
 		}						
 		
+		System.out.println("numUniqueInQuery=" + numUniqueInQuery);
+		
 		long numberOfCustomers = 0;
 		long numberOfDistinctCustomers = 0;
 
@@ -136,7 +136,7 @@ public class TopJaccard {
 		// TODO Remove when it is run on Chluser
 		// these are obly for running local
 		PropertyConfigurator.configure("log4j.properties");
-		conf.setMaster("local[*]");
+		conf.setMaster("spark://192.168.1.223:7077");
 
 		// Kryo Serialization
 		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
