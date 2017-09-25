@@ -114,9 +114,7 @@ public class TopJaccard {
 		// conf.set("spark.speculation", "true");
 
 		conf.set("spark.shuffle.spill", "true");
-		
-		System.out.println("Application Id: " + sc.sc().applicationId());	
-		
+				
 		conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
 		conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
 
@@ -124,6 +122,8 @@ public class TopJaccard {
 
 		JavaSparkContext sc = new JavaSparkContext(conf);
 
+		System.out.println("Application Id: " + sc.sc().applicationId());	
+		
 		if (args.length > 1)
 			fileScale = args[1];
 
