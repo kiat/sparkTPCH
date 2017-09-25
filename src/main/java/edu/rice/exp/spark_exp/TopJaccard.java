@@ -57,6 +57,8 @@ public class TopJaccard {
 		
 		System.out.println("numUniqueInQuery=" + numUniqueInQuery);
 
+		JavaRDD<Customer> customerRDD = null;
+		
 		// can be overwritten by the fourth command line arg
 		String hdfsNameNodePath = "hdfs://10.134.96.100:9000/user/kia/customer-";
 
@@ -141,8 +143,10 @@ public class TopJaccard {
 		// Get the initial time
 		startTime = System.nanoTime();		
 				
-//		if (hdfsNameNodePath.equals("memory"))
-			JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions); 
+		if (hdfsNameNodePath.equals("memory"))
+			customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions); 
+		else
+			customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
 
 		// Print application Id so it can be used via REST API to analyze processing
 		// times		
