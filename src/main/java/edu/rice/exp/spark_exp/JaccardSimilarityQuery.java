@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -217,7 +218,7 @@ public class JaccardSimilarityQuery implements Serializable {
 		// returns pairs with the customerKey and a list with all partsId for each
 		// customer
 		JavaPairRDD<Integer, List<Integer>> allPartsIDsPerCustomer = 
-			customerRDD.flatMapToPair(new PairFlatMapFunction<Customer, 			// Type of Input Object: A Customer
+			customerRDD.mapToPair(new PairFunction<Customer, 			// Type of Input Object: A Customer
 															  Integer,				// Key: Customer
 															  List<Integer>>() {	// Value: A List of all parts Id's
 																					// from all orders for each customer
@@ -225,7 +226,7 @@ public class JaccardSimilarityQuery implements Serializable {
 				private static final long serialVersionUID = 1932241819871271488L;
 	
 				@Override
-				public Iterator<Tuple2<Integer, List<Integer>>> call(Customer customer) throws Exception {
+				public Tuple2<Integer, List<Integer>> call(Customer customer) throws Exception {
 					List<Order> orders = customer.getOrders();
 
 					// List for storing all partID's for this Customer
@@ -234,8 +235,8 @@ public class JaccardSimilarityQuery implements Serializable {
 					
 					// returns a Tuple<Customer, List<Integer>>
 					// where the List contains the ID's of all parts
-					List<Tuple2<Integer, List<Integer>>> returnTuple = 
-						    new ArrayList<Tuple2<Integer, List<Integer>>>();
+//					List<Tuple2<Integer, List<Integer>>> returnTuple = 
+//						    new ArrayList<Tuple2<Integer, List<Integer>>>();
 	
 					// iterates over all orders for a customer
 					for (Order order : orders) {
@@ -258,9 +259,9 @@ public class JaccardSimilarityQuery implements Serializable {
 					Collections.sort(listOfPartsIds, (a, b) -> b.compareTo(a));
 					
 					// creates the tuple to be returned, with the Customer.key and a List<PartsId>
-					returnTuple.add(new Tuple2<Integer, List<Integer>>(new Integer(customer.getCustkey()), listOfPartsIds));
+//					returnTuple.add(new Tuple2<Integer, List<Integer>>(new Integer(customer.getCustkey()), listOfPartsIds));
 					
-					return returnTuple.iterator();
+					return new Tuple2<Integer, List<Integer>>(new Integer(customer.getCustkey()), listOfPartsIds);
 				}
 			});
 		
