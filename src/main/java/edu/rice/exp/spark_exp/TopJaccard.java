@@ -94,6 +94,22 @@ public class TopJaccard {
 		if (args.length > 0)
 			NUMBER_OF_COPIES = Integer.parseInt(args[0]);
 		
+		if (args.length > 1)
+			fileScale = args[1];
+
+		if (args.length > 2)
+			numPartitions = Integer.parseInt(args[2]);
+
+		// Get the initial time
+		startTime = System.nanoTime();
+
+		// if third arg is provided use that and read from hdfs
+		if (args.length > 3)
+			hdfsNameNodePath = args[3];
+		
+		if (args.length > 4)
+			warmCache = Integer.parseInt(args[4]);								
+		
 		long numberOfCustomers = 0;
 		long numberOfDistinctCustomers = 0;
 
@@ -123,34 +139,10 @@ public class TopJaccard {
 		JavaSparkContext sc = new JavaSparkContext(conf);
 
 		System.out.println("Application Id: " + sc.sc().applicationId());	
-		
-		if (args.length > 1)
-			fileScale = args[1];
-
-		if (args.length > 2)
-			numPartitions = Integer.parseInt(args[2]);
-
-		// Get the initial time
-		startTime = System.nanoTime();
-
-		// if third arg is provided use that and read from hdfs
-		if (args.length > 3){
-			hdfsNameNodePath = args[3];
-			
-		}
-		
+				
 		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
 		System.out.println("Loading data from hdfs at: " + hdfsNameNodePath + NUMBER_OF_COPIES);			
 		
-//		else {
-//			System.out.println("Loading data from DataGenerator. ");						
-//			// otherwise, generate from files
-//			JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);			
-//		}
-
-		if (args.length > 4)
-			warmCache = Integer.parseInt(args[4]);
-					
 		// Print application Id so it can be used via REST API to analyze processing
 		// times		
 		System.out.println("The query parts ID's are: [");
