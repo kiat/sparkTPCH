@@ -141,7 +141,8 @@ public class TopJaccard {
 		System.out.println("Application Id: " + sc.sc().applicationId());	
 				
 		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
-		System.out.println("Loading data from hdfs at: " + hdfsNameNodePath + NUMBER_OF_COPIES);			
+		System.out.println("Loading data from hdfs at: " + hdfsNameNodePath + NUMBER_OF_COPIES);
+		customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());		
 		
 		// Print application Id so it can be used via REST API to analyze processing
 		// times		
