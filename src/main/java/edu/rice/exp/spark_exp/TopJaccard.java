@@ -14,6 +14,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
+import org.apache.spark.storage.StorageLevel;
 
 import edu.rice.dmodel.Customer;
 import edu.rice.dmodel.LineItem;
@@ -30,29 +31,7 @@ public class TopJaccard {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
 		// this is our query
-		Integer[] myQuery = {90, 342, 528, 678, 957, 1001, 1950, 2022, 2045, 2345, 3238, 4456, 5218, 5301, 5798, 6001, 6119, 6120, 6153, 6670, 6715, 6896, 7000,
-				7109, 7400, 7542, 8000, 10024, 10030, 10316, 10400, 10534, 11000, 11635, 11700, 11884, 11900, 12413, 14511, 15000, 15594, 15700, 15760, 16000,
-				16976, 17000, 17002, 17003, 17035, 18437, 19000, 20848, 21000, 22004, 22202, 22203, 22339, 22400, 23984, 24000, 24180, 25000, 26284, 27000,
-				27182, 28000, 28268, 28500, 28530, 29000, 31060, 31500, 32388, 32400, 32428, 32774, 33000, 33023, 34000, 34055, 34300, 34385, 36745, 37000,
-				37232, 37500, 37990, 38000, 3982};
-
-
-		int m_index = 0;
-
-		while (true) {
-			if (m_index == myQuery.length)
-				break;
-			
-			// loop to the last repeated value
-			while (m_index + 1 < myQuery.length && myQuery[m_index].intValue() == myQuery[m_index + 1].intValue())
-				m_index++;
-		
-
-			// saw another unique
-			numUniqueInQuery++;
-			m_index++;
-		}
-		
+		Integer[] myQuery = null;
 
 		System.out.println("numUniqueInQuery=" + numUniqueInQuery);
 
@@ -129,8 +108,10 @@ public class TopJaccard {
 		if (args.length > 3){
 			hdfsNameNodePath = args[3];
 			customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
+			System.out.println("Loading data from hdfs at: " + hdfsNameNodePath + NUMBER_OF_COPIES);			
 			
 		} else {
+			System.out.println("Loading data from DataGenerator. ");						
 			// otherwise, generate from files
 			customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);			
 		}
@@ -140,36 +121,54 @@ public class TopJaccard {
 		
 		// if a 6th arg is provided it contains the name of 
 		// a comma separated file with the part Id's to be
-		// used by the query.
+		// used by the query. If not a default input query list
+		// is used (defined in file jaccardDefaultInput
 		// This assumes well-formed numbers!!!!
-		// If this arg is not provided, it uses a default
-		// hard-coded list stored in the variable myQuery
-		if (args.length > 5) {		
+		if (args.length > 5) 		
 		    inputQueryFile = args[5];
+		else
+			inputQueryFile = "jaccardDefaultInput";
 
-			String[] listOfParts = null;
-			
-			try (BufferedReader br = new BufferedReader(new FileReader(inputQueryFile))) {
-				String line;
-				int numItems = 0;
-				while ((line = br.readLine()) != null) {
-					listOfParts = line.split(",");
-					for(int i=numItems;i < listOfParts.length;i++) {
-						myQuery[numItems] = new Integer(listOfParts[numItems]);
-						numItems++;						
-					}
+		String[] listOfParts = null;			
+		
+		try (BufferedReader br = new BufferedReader(new FileReader(inputQueryFile))) {
+			String line;
+			int numItems = 0;
+			while ((line = br.readLine()) != null) {
+				listOfParts = line.split(",");
+				for(int i=numItems;i < listOfParts.length;i++) {
+					myQuery[numItems] = new Integer(listOfParts[numItems]);
+					numItems++;						
 				}
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}			
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
+		
+		int m_index = 0;
+
+		while (true) {
+			if (m_index == myQuery.length)
+				break;
+			
+			// loop to the last repeated value
+			while (m_index + 1 < myQuery.length && myQuery[m_index].intValue() == myQuery[m_index + 1].intValue())
+				m_index++;
+		
+
+			// saw another unique
+			numUniqueInQuery++;
+			m_index++;
+		}				
 
 		// Print application Id so it can be used via REST API to analyze processing
 		// times
 		System.out.println("Application Id: " + sc.sc().applicationId());
-
+		
+		System.out.println("The query parts ID's are: " + myQuery.toString() );
+		
 		conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
 		conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
 
@@ -180,25 +179,25 @@ public class TopJaccard {
 
 		readFileTime = System.nanoTime();
 
-		// if (warmCache == 1) {
-		//
-		// // customerRDD=customerRDD.coalesce(numPartitions);
-		// customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
-		//
-		// System.out.println("Get the number of Customers");
-		//
-		// // force spark to do the job and load data into RDD
-		// numberOfCustomers = customerRDD.count();
-		//
-		// countTimestamp = System.nanoTime();
-		//
-		// System.out.println("Number of Customer: " + numberOfCustomers);
-		//
-		// // do something else to have the data in memory
-		// numberOfDistinctCustomers = customerRDD.distinct().count();
-		// System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
-		//
-		// }
+		 if (warmCache == 1) {
+		
+			 // customerRDD=customerRDD.coalesce(numPartitions);
+			 customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
+			
+			 System.out.println("Get the number of Customers");
+			
+			 // force spark to do the job and load data into RDD
+			 numberOfCustomers = customerRDD.count();
+			
+			 countTimestamp = System.nanoTime();
+			
+			 System.out.println("Number of Customer: " + numberOfCustomers);
+			
+			 // do something else to have the data in memory
+			 numberOfDistinctCustomers = customerRDD.distinct().count();
+			 System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
+		
+		 }
 
 		// #############################################
 		// #############################################
