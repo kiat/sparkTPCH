@@ -214,13 +214,13 @@ public class JaccardSimilarityQuery implements Serializable {
 
 //		System.out.println("Number of Original Customers in RDD: " + customerRDD.count());
 		
-		// flatMap to pair <Customer.key, List<PartID>>
+		// map to pair <Customer.key, List<PartID>>
 		// returns pairs with the customerKey and a list with all partsId for each
 		// customer
 		JavaPairRDD<Integer, List<Integer>> allPartsIDsPerCustomer = 
-			customerRDD.mapToPair(new PairFunction<Customer, 			// Type of Input Object: A Customer
-															  Integer,				// Key: Customer
-															  List<Integer>>() {	// Value: A List of all parts Id's
+			customerRDD.mapToPair(new PairFunction<Customer, 	// Type of Input Object: A Customer
+								  Integer,						// Key: Customer
+								  List<Integer>>() {			// Value: A List of all parts Id's
 																					// from all orders for each customer
 	
 				private static final long serialVersionUID = 1932241819871271488L;
@@ -232,12 +232,7 @@ public class JaccardSimilarityQuery implements Serializable {
 					// List for storing all partID's for this Customer
 					List<Integer> listOfPartsIds = 
 					    new ArrayList<Integer>();
-					
-					// returns a Tuple<Customer, List<Integer>>
-					// where the List contains the ID's of all parts
-//					List<Tuple2<Integer, List<Integer>>> returnTuple = 
-//						    new ArrayList<Tuple2<Integer, List<Integer>>>();
-	
+						
 					// iterates over all orders for a customer
 					for (Order order : orders) {
 						
@@ -248,8 +243,6 @@ public class JaccardSimilarityQuery implements Serializable {
 						for (LineItem lineItem : lineItems) {
 							partKey = lineItem.getPart().getPartID();
 							
-							// now adds the partID only if is not already on the list
-							// TODO see if there's a more efficient way of doing this
 							if (listOfPartsIds.contains(partKey) == false)
 								listOfPartsIds.add(partKey);
 						}
@@ -257,10 +250,7 @@ public class JaccardSimilarityQuery implements Serializable {
 					}
 					// sorts partId's
 					Collections.sort(listOfPartsIds, (a, b) -> b.compareTo(a));
-					
-					// creates the tuple to be returned, with the Customer.key and a List<PartsId>
-//					returnTuple.add(new Tuple2<Integer, List<Integer>>(new Integer(customer.getCustkey()), listOfPartsIds));
-					
+										
 					return new Tuple2<Integer, List<Integer>>(new Integer(customer.getCustkey()), listOfPartsIds);
 				}
 			});
@@ -398,9 +388,9 @@ public class JaccardSimilarityQuery implements Serializable {
 				
 		// print the topK entries
 		for (Tuple2<Double, Tuple2<Integer, List<Integer>>>  resultItem : topKResults) {
-	        System.out.println("Customer key: "+ resultItem._2._1 + 
-	        				   " Similarity Score: " + resultItem._1.toString() + 
-	        				   "\nParts:" + resultItem._2._2);	
+	        System.out.println("Score is: [" + resultItem._1.toString() + 
+	        		           "] Customer key: ["+ resultItem._2._1 + 
+	        				   "] Part keys: [" + resultItem._2._2 + "]");	
 		}
 				
 	    
