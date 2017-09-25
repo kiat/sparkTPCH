@@ -101,9 +101,6 @@ public class TopJaccard {
 		if (args.length > 2)
 			numPartitions = Integer.parseInt(args[2]);
 
-		// Get the initial time
-		startTime = System.nanoTime();
-
 		// if third arg is provided use that and read from hdfs
 		if (args.length > 3)
 			hdfsNameNodePath = args[3];
@@ -119,8 +116,8 @@ public class TopJaccard {
 
 		// TODO Remove when it is run on Chluser
 		// these are obly for running local
-//		PropertyConfigurator.configure("log4j.properties");
-//		conf.setMaster("local[*]");
+		PropertyConfigurator.configure("log4j.properties");
+		conf.setMaster("local[*]");
 
 		// Kryo Serialization
 		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
@@ -131,15 +128,18 @@ public class TopJaccard {
 		// conf.set("spark.speculation", "true");
 
 		conf.set("spark.shuffle.spill", "true");
-				
-		conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
-		conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
-
-		conf.set("fs.local.block.size", "268435456");	
 
 		JavaSparkContext sc = new JavaSparkContext(conf);
 
 		System.out.println("Application Id: " + sc.sc().applicationId());	
+		
+		conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
+		conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
+
+		conf.set("fs.local.block.size", "268435456");	
+		
+		// Get the initial time
+		startTime = System.nanoTime();		
 				
 //		if (hdfsNameNodePath.equals("memory"))
 			JavaRDD<Customer> customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions); 
@@ -177,19 +177,19 @@ public class TopJaccard {
 		
 		 }
 
-		List<Customer> customerForPrint = customerRDD.collect();
-		
-		for (Customer  resultItem : customerForPrint) {
-	        System.out.println("\n---> Customer key: "+ resultItem.getCustkey());
-			List<Order> myOrders = resultItem.getOrders();
- 
-			for (Order  order : myOrders) {
-				List<LineItem> myItems = order.getLineItems();
-				for (LineItem  item : myItems) {				
-				    System.out.print(item.getPart().getPartID() + ",");
-				}
-			}
-		}		
+//		List<Customer> customerForPrint = customerRDD.collect();
+//		
+//		for (Customer  resultItem : customerForPrint) {
+//	        System.out.println("\n---> Customer key: "+ resultItem.getCustkey());
+//			List<Order> myOrders = resultItem.getOrders();
+// 
+//			for (Order  order : myOrders) {
+//				List<LineItem> myItems = order.getLineItems();
+//				for (LineItem  item : myItems) {				
+//				    System.out.print(item.getPart().getPartID() + ",");
+//				}
+//			}
+//		}		
 			
 		// #############################################
 		// #############################################
