@@ -171,10 +171,10 @@ public class TopJaccard {
 		// Get the initial time
 		startTime = System.nanoTime();		
 				
-//		if (hdfsNameNodePath.equals("memory"))
+		if (hdfsNameNodePath.equals("memory"))
 			customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions); 
-//		else
-//			customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
+		else
+			customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
 
 		// Print application Id so it can be used via REST API to analyze processing
 		// times		
