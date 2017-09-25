@@ -16,6 +16,7 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.storage.StorageLevel;
 
+import scala.Tuple2;
 import edu.rice.dmodel.Customer;
 import edu.rice.dmodel.LineItem;
 import edu.rice.dmodel.MyKryoRegistrator;
@@ -177,6 +178,13 @@ public class TopJaccard {
 		
 		 }
 
+		List<Customer> customerForPrint = customerRDD.collect();
+		
+		for (Customer  resultItem : customerForPrint) {
+	        System.out.println("Customer key: "+ resultItem.getCustkey() + 
+	        				   "nParts: " + resultItem.getOrders().toString());	
+		}		
+			
 		// #############################################
 		// #############################################
 		// ######### MAIN Experiment #############
