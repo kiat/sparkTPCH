@@ -143,7 +143,7 @@ public class TopJaccard {
 
 		System.out.println("Application Id: " + sc.sc().applicationId());	
 				
-		if (hdfsNameNodePath=="memory") {
+		if (hdfsNameNodePath.equals("memory")) {
 			System.out.println("Loading data from DataGenerator. ");						
 			customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions); 
 		} else {
