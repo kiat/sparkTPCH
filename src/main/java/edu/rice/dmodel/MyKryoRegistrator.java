@@ -64,27 +64,27 @@ public class MyKryoRegistrator implements KryoRegistrator, Serializable {
 	 */
 	@Override
 	public void registerClasses(@Nonnull Kryo kryo) {
-		kryo.register(Object[].class, 1);
-		kryo.register(scala.Tuple2[].class, 2);
+		kryo.register(Object[].class);
+		kryo.register(scala.Tuple2[].class);
 
-		kryo.register(java.util.ArrayList.class, 3);
-		kryo.register(java.util.HashMap.class, 4);
-		kryo.register(java.util.HashSet.class, 5);
+		kryo.register(java.util.ArrayList.class);
+		kryo.register(java.util.HashMap.class);
+		kryo.register(java.util.HashSet.class);
 
 		// register my classes. 
-		kryo.register(edu.rice.dmodel.Part.class, 6);
-		kryo.register(edu.rice.dmodel.Supplier.class, 7);
-		kryo.register(edu.rice.dmodel.Order.class, 8);
-		kryo.register(edu.rice.dmodel.LineItem.class, 9);
-		kryo.register(edu.rice.dmodel.Customer.class, 10);
+		kryo.register(edu.rice.dmodel.Part.class);
+		kryo.register(edu.rice.dmodel.Supplier.class);
+		kryo.register(edu.rice.dmodel.Order.class);
+		kryo.register(edu.rice.dmodel.LineItem.class);
+		kryo.register(edu.rice.dmodel.Customer.class);
 		
-		kryo.register(edu.rice.dmodel.SupplierData.class, 11);
-		kryo.register(edu.rice.dmodel.PartIDCount.class, 12);
-		kryo.register(edu.rice.dmodel.Wrapper.class, 13);
+		kryo.register(edu.rice.dmodel.SupplierData.class);
+		kryo.register(edu.rice.dmodel.PartIDCount.class);
+		kryo.register(edu.rice.dmodel.Wrapper.class);
 
-		kryo.register(byte[][].class, 14);
-		kryo.register(int[].class, 15);
-		kryo.register(Integer[].class, 16);
+		kryo.register(byte[][].class);
+		kryo.register(int[].class);
+		kryo.register(Integer[].class);
 
 
 		doRegistration(kryo, "scala.collection.mutable.WrappedArray$ofRef");

@@ -390,7 +390,7 @@ public class JaccardSimilarityQuery implements Serializable {
 		for (Tuple2<Double, Tuple2<Integer, List<Integer>>>  resultItem : topKResults) {
 	        System.out.println("Score is: [" + resultItem._1.toString() + 
 	        		           "] Customer key: ["+ resultItem._2._1 + 
-	        				   "] Part keys: [" + resultItem._2._2 + "]");	
+	        				   "] Part keys: " + resultItem._2._2);	
 		}
 				
 	    
