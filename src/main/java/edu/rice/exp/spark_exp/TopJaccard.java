@@ -250,7 +250,7 @@ public class TopJaccard {
 
 				// we do nothing if
 				if (orders.size() == 0 || orders == null) {
-					return new Wrapper(m_Customer.getCustkey(), null, 0);
+					return new Wrapper(0, null, 0);
 				}
 
 				// We collect the list of all partIDs ordered by the Customer.
