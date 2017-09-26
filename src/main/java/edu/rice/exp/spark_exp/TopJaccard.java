@@ -56,6 +56,10 @@ public class TopJaccard {
 		double queryTime = 0; // time to run the query (doesn't include data load)
 		double elapsedTotalTime = 0; // total elapsed time
 
+		// what top K elements to include in query
+		// can be overwritten by the 3rd command line arg
+		int topKValue = 10;
+		
 		// define the number of partitions
 		// can be overwritten by the 3rd command line arg
 		int numPartitions = 8;
@@ -82,17 +86,20 @@ public class TopJaccard {
 			fileScale = args[1];
 
 		if (args.length > 2)
-			numPartitions = Integer.parseInt(args[2]);
+			topKValue = Integer.parseInt(args[2]);
+		
+		if (args.length > 3)
+			numPartitions = Integer.parseInt(args[3]);
 
 		// if third arg is provided use that and read from hdfs
-		if (args.length > 3)
-			hdfsNameNodePath = args[3];
-
 		if (args.length > 4)
-			warmCache = Integer.parseInt(args[4]);
+			hdfsNameNodePath = args[4];
 
-		// if (args.length > 5)
-		// inputQueryFile = args[5];
+		if (args.length > 5)
+			warmCache = Integer.parseInt(args[5]);
+
+		// if (args.length > 6)
+		// inputQueryFile = args[6];
 		// else
 		// inputQueryFile = "jaccardDefaultInput";
 
@@ -166,10 +173,10 @@ public class TopJaccard {
 		// Get the initial time
 		startTime = System.nanoTime();
 
-		// if (hdfsNameNodePath.equals("memory"))
-		customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);
-		// else
-		// customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
+		if (hdfsNameNodePath.equals("memory"))
+			customerRDD = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);
+		else
+			customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
 
 		// Print application Id so it can be used via REST API to analyze processing
 		// times
