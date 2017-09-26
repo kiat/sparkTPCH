@@ -72,6 +72,7 @@ public class TopJaccard {
 		// Default name of file with query data represented as
 		// a comma separated text file, e.g. 222,543,22,56,23
 		// String inputQueryFile = "jaccardInput";
+		String inputQueryFile = "jaccardInput";		
 
 		// can be overwritten by the 4rd command line arg
 		// 0 = the query time doesn't include count nor count.distinct
@@ -98,30 +99,33 @@ public class TopJaccard {
 		if (args.length > 5)
 			warmCache = Integer.parseInt(args[5]);
 
-		// if (args.length > 6)
-		// inputQueryFile = args[6];
-		// else
-		// inputQueryFile = "jaccardDefaultInput";
-
-		// String[] listOfParts = null;
-
-		// try (BufferedReader br = new BufferedReader(new FileReader(inputQueryFile))) {
-		// String line;
-		// while ((line = br.readLine()) != null) {
-		// listOfParts = line.split(",");
-		// }
-		// } catch (FileNotFoundException e) {
-		// e.printStackTrace();
-		// } catch (IOException e) {
-		// e.printStackTrace();
-		// }
-		//
-		// this is our query
-		// Integer[] myQuery = new Integer[listOfParts.length];
-		//
-		// for(int i=0;i < listOfParts.length;i++) {
-		// myQuery[i] = Integer.valueOf(listOfParts[i]);
-		// }
+//		// read the query string from a text file, if this arg
+//		// is not provided, the default hard-coded values are 
+//		// used
+//		if (args.length > 6)
+//			inputQueryFile = args[6];
+//		else
+//			inputQueryFile = "jaccardDefaultInput";
+//
+//		 String[] listOfParts = null;
+//
+//		 try (BufferedReader br = new BufferedReader(new FileReader(inputQueryFile))) {
+//			 String line;
+//			 while ((line = br.readLine()) != null) {
+//				 listOfParts = line.split(",");
+//			 }
+//		 } catch (FileNotFoundException e) {
+//			 e.printStackTrace();
+//		 } catch (IOException e) {
+//			 e.printStackTrace();
+//		 }
+//		
+//		 //this is our query
+//		 myQuery = new Integer[listOfParts.length];
+//		
+//		 for(int i=0;i < listOfParts.length;i++) {
+//			 myQuery[i] = Integer.valueOf(listOfParts[i]);
+//		 }
 
 		int m_index = 0;
 
@@ -146,7 +150,7 @@ public class TopJaccard {
 		SparkConf conf = new SparkConf();
 		conf.setAppName("TopJaccard-" + NUMBER_OF_COPIES);
 
-		// TODO Remove when it is run on Chluser
+		// TODO Remove when it is run on cluster
 		// these are obly for running local
 		// PropertyConfigurator.configure("log4j.properties");
 		// conf.setMaster("local[*]");
@@ -193,39 +197,25 @@ public class TopJaccard {
 
 		readFileTime = System.nanoTime();
 
-		// if (warmCache == 1) {
-		//
-		// // customerRDD=customerRDD.coalesce(numPartitions);
-		// customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
-		//
-		// System.out.println("Get the number of Customers");
-		//
-		// // force spark to do the job and load data into RDD
-		// numberOfCustomers = customerRDD.count();
-		//
-		// countTimestamp = System.nanoTime();
-		//
-		// System.out.println("Number of Customer: " + numberOfCustomers);
-		//
-		// // do something else to have the data in memory
-		// numberOfDistinctCustomers = customerRDD.distinct().count();
-		// System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
-		//
-		// }
-
-		// List<Customer> customerForPrint = customerRDD.collect();
-		//
-		// for (Customer resultItem : customerForPrint) {
-		// System.out.println("\n---> Customer key: "+ resultItem.getCustkey());
-		// List<Order> myOrders = resultItem.getOrders();
-		//
-		// for (Order order : myOrders) {
-		// List<LineItem> myItems = order.getLineItems();
-		// for (LineItem item : myItems) {
-		// System.out.print(item.getPart().getPartID() + ",");
-		// }
-		// }
-		// }
+		 if (warmCache == 1) {
+		
+			 // customerRDD=customerRDD.coalesce(numPartitions);
+			 customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
+			
+			 System.out.println("Get the number of Customers");
+			
+			 // force spark to do the job and load data into RDD
+			 numberOfCustomers = customerRDD.count();
+			
+			 countTimestamp = System.nanoTime();
+			
+			 System.out.println("Number of Customer: " + numberOfCustomers);
+			
+			 // do something else to have the data in memory
+			 numberOfDistinctCustomers = customerRDD.distinct().count();
+			 System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
+		
+		 }
 
 		// we broadcast the query
 		final Broadcast<Integer[]> broadcastedQuery = sc.broadcast(myQuery);
