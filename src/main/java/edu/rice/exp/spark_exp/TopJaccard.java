@@ -351,7 +351,7 @@ public class TopJaccard {
 		});
 
 		// Then we get the top 10 Results
-		List<Wrapper> results = myMappedData.top(10);
+		List<Wrapper> results = myMappedData.top(topKValue);
 
 		// We print out the results
 		for (Wrapper wrapper : results) {
