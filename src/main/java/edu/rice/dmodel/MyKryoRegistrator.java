@@ -64,6 +64,10 @@ public class MyKryoRegistrator implements KryoRegistrator, Serializable {
 	 */
 	@Override
 	public void registerClasses(@Nonnull Kryo kryo) {
+		// the order in which these classes are registered matters, if
+		// you need to add more classes, add them at the end of the list!!!
+		// by default kryo assigns the next int ID available when registering
+		// classes.
 		kryo.register(Object[].class);
 		kryo.register(scala.Tuple2[].class);
 
@@ -97,33 +101,11 @@ public class MyKryoRegistrator implements KryoRegistrator, Serializable {
 		doRegistration(kryo, "scala.math.Ordering");
 		doRegistration(kryo, "org.apache.spark.rdd.RDD");
 		doRegistration(kryo, "java.util.Comparator");		
-
-		//  java.lang.IllegalArgumentException: Class is not registered: scala.math.LowPriorityOrderingImplicits$$anon$7
 		
 		doRegistration(kryo, "org.apache.spark.sql.catalyst.InternalRow");
 		doRegistration(kryo, "org.apache.spark.sql.catalyst.expressions.UnsafeRow");
 		
-		
-		
-
-		
-		
-		// doRegistration(kryo,
-		// "org.systemsbiology.xtandem.scoring.VariableStatistics");
-		// doRegistration(kryo,
-		// "org.systemsbiology.xtandem.scoring.SpectralPeakUsage$PeakUsage");
-		// // and many more similar nines
-
-		// kryo.register(Part.class, new FieldSerializer(kryo, Part.class));
-		// kryo.register(Supplier.class, new FieldSerializer(kryo,
-		// Supplier.class));
-		// kryo.register(Order.class, new FieldSerializer(kryo, Order.class));
-		// kryo.register(LineItem.class, new FieldSerializer(kryo,
-		// LineItem.class));
-		// kryo.register(Customer.class, new FieldSerializer(kryo,
-		// Customer.class));
-		// kryo.register(SupplierData.class, new FieldSerializer(kryo,
-		// SupplierData.class));
+		// register new classes beyond this point, the order matters!!!		
 
 	}
 
