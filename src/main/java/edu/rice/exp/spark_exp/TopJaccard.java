@@ -375,7 +375,6 @@ public class TopJaccard {
 		// + "\nQuery time: " + String.format("%.9f", queryTime) + "\nTotal time: " + String.format("%.9f", elapsedTotalTime) + "\n");
 
 		// Finally stop the Spark context once all is completed
-
 		sc.stop();
 
 	}

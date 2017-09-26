@@ -41,14 +41,15 @@ import edu.rice.dmodel.Wrapper;
  * dataset.
  * 
  * The objects to compare are as follows: For each Customer 
- * obtain a list of Orders and within each Order, obtain a 
+ * obtain a list of all Orders and within each Order, obtain a 
  * list of unique Part ID's (i.e. duplicates are included only
  * once).
  * 
  * For each of these objects we compute Jaccard Similarity,
  * which is calculated as the number of parts that are in
- * both sets (intersection), divided by the total number of 
- * parts in both sets (duplicated counted once).
+ * both the Query Object and a Customer's List (intersection), 
+ * divided by the total number of parts in both sets 
+ * (duplicated counted once).
  *  
  * First, for each customer we obtain a list of unique parts 
  * ordered for all orders, returning a pair of:
@@ -58,374 +59,365 @@ import edu.rice.dmodel.Wrapper;
  * Second, for each customer we calculate the Jaccard Similarity
  * against the list of parts from the query, returning a pair of:
  * 
- * Tuple2< similarity.value, List<partId's>>, similarity.value
- * closer to 1 the  lists are more similar, closer to 0, the lists
+ * Tuple2< similarity.value, Tuple2< Customer.key List<partId's>>,
+ * similarity.values closer to 1. means the query is more similar
+ * to a give Customer's list; values closer to 0, the lists
  * are less similar.
  * 
- * Third, we create a priority queue sorting by similarity.value
- * and return the top 10 of the list.
+ * Third, we obtained the top K entries based on the similarity.value
+ * and return them.
  *
  */
 
 public class JaccardSimilarityQuery implements Serializable {
-	
-	private static final long serialVersionUID = 3045541819871271488L;	
+    
+    private static final long serialVersionUID = 3045541819871271488L;    
 
-	public static void main(String[] args) throws FileNotFoundException, IOException {
+    public static void main(String[] args) throws FileNotFoundException, IOException {
 
-		// can be overwritten by the fourth command line arg
-		String hdfsNameNodePath = "hdfs://10.134.96.100:9000/user/kia/customer-";
+        long numberOfCustomers = 0;
+        long numberOfDistinctCustomers = 0;
+        
+        long startTime = 0;             // timestamp from the beginning
+        long readFileTime = 0;          // timestamp after reading from HDFS
+        long countTimestamp = 0;        // timestamp after count that reads
+                                        // from disk into RDD
+        long startQueryTimestamp = 0;   // timestamp before query begins
+        long finalTimestamp = 0;        // timestamp final
 
-		long startTime = 0; 			// timestamp from the beginning
-		long readFileTime = 0; 			// timestamp after reading from HDFS
-		long countTimestamp = 0; 		// timestamp after count that reads
-										// from disk into RDD
-		long startQueryTimestamp = 0; 	// timestamp before query begins
-		long finalTimestamp = 0; 		// timestamp final
+        double readsHDFSTime = 0;       // time to read from HDFS (not including count + count.distinct)
+        double loadRDDTime = 0;         // time to load RDD in memory (includes count + count.distinct)
+        double countTime = 0;           // time to count (includes only count)
+        double queryTime = 0;           // time to run the query (doesn't include data load)
+        double elapsedTotalTime = 0;    // total elapsed time
 
-		double readsHDFSTime = 0; 		// time to read from HDFS (not including count + count.distinct)
-		double loadRDDTime = 0; 		// time to load RDD in memory (includes count + count.distinct)
-		double countTime = 0; 			// time to count (includes only count)
-		double queryTime = 0; 			// time to run the query (doesn't include data load)
-		double elapsedTotalTime = 0; 	// total elapsed time
+        // number of Customers multiply X 2^REPLICATION_FACTOR
+        // can be overwritten by the first arg
+        int NUMBER_OF_COPIES = 0;
+        
+        // Default name of file with query data
+        // can be overwritten by 2n arg
+        String inputQueryFile = "jaccardInput";        
+        
+        // what top K elements to include in query
+        // can be overwritten by the 3rd arg
+        int topKValue = 10;
+                
+        // URL of the hdfs file system
+        // can be overwritten by the 4th arg
+        String hdfsNameNodePath = "hdfs://10.134.96.100:9000/user/kia/customer-";        
 
-		// what top K elements to include in query
-		// can be overwritten by the 3rd command line arg
-		int topKValue = 10;
+        // 0 = the query time doesn't include count nor count.distinct
+        // (thus calculated time includes reading from HDFS)
+        // 1 = the query includes count and count.distinct (default)
+        // can be overwritten by 5th arg
+        int warmCache = 1;
+        
+        if (args.length > 0)
+            NUMBER_OF_COPIES = Integer.parseInt(args[0]);
 
-		int NUMBER_OF_COPIES = 0;// number of Customers multiply X 2^REPLICATION_FACTOR
+        if (args.length > 1)        
+            inputQueryFile = args[1];
 
-		// TODO this is not used and should be removed
-		String fileScale = "0.2";
-		
-		// Default name of file with query data
-		String inputQueryFile = "jaccardInput";
+        String[] listOfParts = null;
+        
+        // reads list of partID's from a system file
+        try (BufferedReader br = new BufferedReader(new FileReader(inputQueryFile))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                listOfParts = line.split(",");
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }        
 
-		// can be overwritten by the 4rd command line arg
-		// 0 = the query time doesn't include count nor count.distinct
-		// (thus calculated time includes reading from HDFS)
-		// 1 = the query includes count and count.distinct (default)
-		int warmCache = 1;
+        // Creates a List<Integer> with the PartID's to be used for 
+        // the query
+        List<Integer> queryListOfPartsIds = 
+            new ArrayList<Integer>(listOfParts.length);        
 
-		if (args.length > 0)
-			NUMBER_OF_COPIES = Integer.parseInt(args[0]);
+        for (int i = 0; i < listOfParts.length; i++) {
+            int tmp = Integer.parseInt(listOfParts[i]);
+            queryListOfPartsIds.add(tmp);
+        }
 
-		if (args.length > 1)		
-		    inputQueryFile = args[1];
+        Collections.sort(queryListOfPartsIds);
+                
+        if (args.length > 2)
+            topKValue = Integer.parseInt(args[2]);
 
-		String[] listOfParts = null;
-		
-		try (BufferedReader br = new BufferedReader(new FileReader(inputQueryFile))) {
-			String line;
-			while ((line = br.readLine()) != null) {
-				listOfParts = line.split(",");
-			}
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}		
+        if (args.length > 3)
+            hdfsNameNodePath = args[3];
 
-		// Creates a List<Integer> with the PartID's to be used for 
-		// the query
-		List<Integer> queryListOfPartsIds = 
-		    new ArrayList<Integer>(listOfParts.length);		
+        if (args.length > 4)
+            warmCache = Integer.parseInt(args[4]);
 
-		for (int i = 0; i < listOfParts.length; i++) {
-			int tmp = Integer.parseInt(listOfParts[i]);
-			queryListOfPartsIds.add(tmp);
-		}
-		
-		if (args.length > 2)
-			topKValue = Integer.parseInt(args[2]);
+        SparkConf conf = new SparkConf();
+        conf.setAppName("JaccardSimilarity- " + NUMBER_OF_COPIES);
+                
+        // Kryo Serialization
+        conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
+        conf.set("spark.kryo.registrationRequired", "true");
+        conf.set("spark.kryo.registrator", MyKryoRegistrator.class.getName());
 
-		if (args.length > 3)
-			hdfsNameNodePath = args[3];
+        conf.set("spark.io.compression.codec", "lzf"); // snappy, lzf, lz4
 
-		if (args.length > 4)
-			warmCache = Integer.parseInt(args[4]);
+        conf.set("spark.shuffle.spill", "true");
 
-		long numberOfCustomers = 0;
-		long numberOfDistinctCustomers = 0;
+        JavaSparkContext sc = new JavaSparkContext(conf);
 
-		SparkConf conf = new SparkConf();
-		conf.setAppName("JaccardSimilarity- " + NUMBER_OF_COPIES);
-				
-		// Kryo Serialization
-		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
-		conf.set("spark.kryo.registrationRequired", "true");
-		conf.set("spark.kryo.registrator", MyKryoRegistrator.class.getName());
+        // Print application Id so it can be used via REST API to analyze processing
+        // times
+        System.out.println("Application Id: " + sc.sc().applicationId());
 
-		conf.set("spark.io.compression.codec", "lzf"); // snappy, lzf, lz4
-		// conf.set("spark.speculation", "true");
+        conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
+        conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
 
-		conf.set("spark.shuffle.spill", "true");
+        conf.set("fs.local.block.size", "268435456");
+                        
+        // Get the initial time
+        startTime = System.nanoTime();
 
-		JavaSparkContext sc = new JavaSparkContext(conf);
+        JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
 
-		// Print application Id so it can be used via REST API to analyze processing
-		// times
-		System.out.println("Application Id: " + sc.sc().applicationId());
+        customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
+        
+        readFileTime = System.nanoTime();
 
-		conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
-		conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
+        if (warmCache == 1) {
+            System.out.println("Get the number of Customers");
 
-		conf.set("fs.local.block.size", "268435456");
-						
-		// Get the initial time
-		startTime = System.nanoTime();
+            // force spark to do the job and load data into RDD
+            numberOfCustomers = customerRDD.count();
 
-		JavaRDD<Customer> customerRDD = sc.objectFile(hdfsNameNodePath + NUMBER_OF_COPIES);
+            countTimestamp = System.nanoTime();
 
-		customerRDD.persist(StorageLevel.MEMORY_ONLY_SER());
-		
-		readFileTime = System.nanoTime();
+            System.out.println("Number of Customer: " + numberOfCustomers);
 
-		if (warmCache == 1) {
+            // do something else to have the data in memory
+            numberOfDistinctCustomers = customerRDD.distinct().count();
+            System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
 
-			// customerRDD=customerRDD.coalesce(numPartitions);
+        }
+        
+        System.out.println("The query parts are: " + queryListOfPartsIds.toString() );
 
-			System.out.println("Get the number of Customers");
+        // #############################################
+        // #############################################
+        // #########     MAIN Experiment   #############
+        // #############################################
+        // #############################################
 
-			// force spark to do the job and load data into RDD
-			numberOfCustomers = customerRDD.count();
+        // Now is data loaded in RDD, ready for the experiment
+        // Start the timer
+        startQueryTimestamp = System.nanoTime();
+        
+        // map to pair <Customer.key, List<PartID>>
+        // returns pairs with the customerKey and a list with all partsId for each
+        // customer
+        JavaPairRDD<Integer, List<Integer>> allPartsIDsPerCustomer = 
+            customerRDD.mapToPair(new PairFunction<Customer,  // Type of Input Object: A Customer
+                                  Integer,                    // Key: Customer
+                                  List<Integer>>() {          // Value: A List of all parts Id's
+                                                              // from all orders for each customer
+    
+                private static final long serialVersionUID = 1932241819871271488L;
+    
+                @Override
+                public Tuple2<Integer, List<Integer>> call(Customer customer) throws Exception {
+                    List<Order> orders = customer.getOrders();
 
-			countTimestamp = System.nanoTime();
+                    // List for storing all partID's for this Customer
+                    List<Integer> listOfPartsIds = 
+                        new ArrayList<Integer>();
+                        
+                    // iterates over all orders for a customer
+                    for (Order order : orders) {
+                        
+                        List<LineItem> lineItems = order.getLineItems();
+                        Integer partKey = new Integer(0);
+                        
+                        //iterates over the items in an order
+                        for (LineItem lineItem : lineItems) {
+                            partKey = lineItem.getPart().getPartID();
+                            
+                            if (listOfPartsIds.contains(partKey) == false)
+                                listOfPartsIds.add(partKey);
+                        }
+                        
+                    }
+                    // sorts partId's
+                    Collections.sort(listOfPartsIds, (a, b) -> b.compareTo(a));
+                                        
+                    return new Tuple2<Integer, List<Integer>>(new Integer(customer.getCustkey()), listOfPartsIds);
+                }
+            });
+                
+        // Now, let's compute Jaccard Similarity returning 
+        // a tuple <Similarity.score, <customer.key, <list of PartID's>>
+        // for each customer
+        JavaPairRDD<Double, Tuple2<Integer, List<Integer>>> jaccardSimilarityScore = 
+                allPartsIDsPerCustomer.flatMapToPair(new PairFlatMapFunction<Tuple2<Integer, List<Integer>>,    // Type of input RDD
+                                                    Double,                                                     // Key: Similarity value
+                                                    Tuple2<Integer, List<Integer>>>() {                         // Value: Customer.key and List<PartsId>
+        
+            private static final long serialVersionUID = 2009241861741271488L;
 
-			System.out.println("Number of Customer: " + numberOfCustomers);
+            @Override
+            public Iterator<Tuple2<Double, Tuple2<Integer, List<Integer>>>> call(Tuple2<Integer, List<Integer>> item) throws Exception {
 
-			// do something else to have the data in memory
-			numberOfDistinctCustomers = customerRDD.distinct().count();
-			System.out.println("Number of Distinct Customer: " + numberOfDistinctCustomers);
+            	// retrieves the list of parts for this customer
+                List<Integer> customerListOfPartsIds = item._2;
+                                                                        
+                // sort list of partId's
+                Collections.sort(customerListOfPartsIds);                        
+                
+                // will store the common PartID's in this List
+                List<Integer> inCommon = 
+                        new ArrayList<Integer>();
 
-		}
-		
-		System.out.println("The query parts are: " + queryListOfPartsIds.toString() );
+                // will store all PartID's (repeated counts only one) in this List
+                List<Integer> totalUniquePartsID = 
+                        new ArrayList<Integer>();    
+                                
+                int indexQueryList = 0;
+                int indexCustoList = 0;
+                                
+                // iterates until the end of the shortest list is reached
+                while(indexQueryList < queryListOfPartsIds.size() && 
+                      indexCustoList < customerListOfPartsIds.size()){
+                    
+                    // if the value in the current entry in Query List is greater 
+                    // than the one in the Customer List, this is a unique partId
+                    if (queryListOfPartsIds.get(indexQueryList).intValue() > customerListOfPartsIds.get(indexCustoList).intValue()){
+                        
+                        totalUniquePartsID.add(customerListOfPartsIds.get(indexCustoList));
+                        // move index in Customer List to the next entry
+                        indexCustoList++;
+                        
+                    } else {
+                        // if both values in the current Query List and Customer List 
+                        // are equal, this is a common partId                    
+                        if (queryListOfPartsIds.get(indexQueryList).intValue() == customerListOfPartsIds.get(indexCustoList).intValue()){
+                            
+                            inCommon.add(queryListOfPartsIds.get(indexQueryList));
+                            // but a common part is also unique, so put it in the 
+                            // corresponding list
+                            totalUniquePartsID.add(queryListOfPartsIds.get(indexQueryList));
+                            
+                            // move index in both Lists to the next entry
+                            indexCustoList++;
+                            indexQueryList++;
+                            
+                        } else {
+                            // if the value in the current Query List is less than the 
+                            // one in the Customer List, this is not a common part 
+                            totalUniquePartsID.add(queryListOfPartsIds.get(indexQueryList));
+                            // move index in Query List to the next entry
+                            indexQueryList++;    
+                            
+                        }                    
+                    }                
+                }        
+                
+                // we will iterate from the last index in the shortest List
+                // until the end of the largest List, all entries are unique
+                // partID's
+                if (queryListOfPartsIds.size() > customerListOfPartsIds.size()){
+                    
+                    for (int i=indexQueryList; i< queryListOfPartsIds.size(); i++)
+                        totalUniquePartsID.add(queryListOfPartsIds.get(i));
+                    
+                } else{
+                    
+                    for (int i=indexCustoList; i< customerListOfPartsIds.size(); i++)
+                        totalUniquePartsID.add(customerListOfPartsIds.get(i));
+                    
+                }                        
 
-		// #############################################
-		// #############################################
-		// #########     MAIN Experiment   #############
-		// #############################################
-		// #############################################
+                Double similarityValue = new Double(0.0);
 
-		// Now is data loaded in RDD, ready for the experiment
-		// Start the timer
-		startQueryTimestamp = System.nanoTime();
+                // Prevents divided by zero errors
+                if (totalUniquePartsID.size()!=0)
+                    similarityValue = new Double((double)inCommon.size() / (double)totalUniquePartsID.size());
+                
+                // adds the similarity along with part ID's from this customer
+                // that are common with the query list
+                Tuple2<Integer, List<Integer>> innerTuple = 
+                        new Tuple2<Integer, List<Integer>>(item._1, inCommon);
+                // adds the Customer.key
+                Tuple2<Double, Tuple2<Integer, List<Integer>>> outerTuple = 
+                        new Tuple2<Double, Tuple2<Integer, List<Integer>>>(similarityValue, innerTuple);
+                
+                List<Tuple2<Double, Tuple2<Integer, List<Integer>>>> returnTuple = 
+                        new ArrayList<Tuple2<Double, Tuple2<Integer, List<Integer>>>>();
+                
+                returnTuple.add(outerTuple);
+                                
+                return returnTuple.iterator();
+                
+            }
+        });
+                
+        // Comparator class for comparing similarity results, to be used in top() and
+        // prevents kryo serialization error by implementing Serializable
+        class TupleComparator implements Comparator<Tuple2<Double, Tuple2<Integer, List<Integer>>>>, Serializable {
 
-//		System.out.println("Number of Original Customers in RDD: " + customerRDD.count());
-		
-		// map to pair <Customer.key, List<PartID>>
-		// returns pairs with the customerKey and a list with all partsId for each
-		// customer
-		JavaPairRDD<Integer, List<Integer>> allPartsIDsPerCustomer = 
-			customerRDD.mapToPair(new PairFunction<Customer, 	// Type of Input Object: A Customer
-								  Integer,						// Key: Customer
-								  List<Integer>>() {			// Value: A List of all parts Id's
-																					// from all orders for each customer
-	
-				private static final long serialVersionUID = 1932241819871271488L;
-	
-				@Override
-				public Tuple2<Integer, List<Integer>> call(Customer customer) throws Exception {
-					List<Order> orders = customer.getOrders();
+            private static final long serialVersionUID = 1972211969496211511L;
 
-					// List for storing all partID's for this Customer
-					List<Integer> listOfPartsIds = 
-					    new ArrayList<Integer>();
-						
-					// iterates over all orders for a customer
-					for (Order order : orders) {
-						
-						List<LineItem> lineItems = order.getLineItems();
-						Integer partKey = new Integer(0);
-						
-						//iterates over the items in an order
-						for (LineItem lineItem : lineItems) {
-							partKey = lineItem.getPart().getPartID();
-							
-							if (listOfPartsIds.contains(partKey) == false)
-								listOfPartsIds.add(partKey);
-						}
-						
-					}
-					// sorts partId's
-					Collections.sort(listOfPartsIds, (a, b) -> b.compareTo(a));
-										
-					return new Tuple2<Integer, List<Integer>>(new Integer(customer.getCustkey()), listOfPartsIds);
-				}
-			});
-		
-//		System.out.println("Total customers after 1st map " + allPartsIDsPerCustomer.count());
-		
-		// Now, let's compute Jaccard Similarity
-		// returns the SimilarityScore and a tuple <Similarity score, and the list of PartID's>
-		// for each customer
-		JavaPairRDD<Double, Tuple2<Integer, List<Integer>>> jaccardSimilarityScore = 
-				allPartsIDsPerCustomer.flatMapToPair(new PairFlatMapFunction<Tuple2<Integer, List<Integer>>,	// Type of input RDD
-													Double,													    // Key: Similarity value
-													Tuple2<Integer, List<Integer>>>() {							// Value: Customer.key and List<PartsId>
-		
-			private static final long serialVersionUID = 2009241861741271488L;
+            @Override
+            public int compare(Tuple2<Double, Tuple2<Integer,List<Integer>>> score_1, 
+                               Tuple2<Double, Tuple2<Integer,List<Integer>>> score_2) {
+                return Double.compare(score_1._1, score_2._1);
+            }
+        }    
 
-			@Override
-			public Iterator<Tuple2<Double, Tuple2<Integer, List<Integer>>>> call(Tuple2<Integer, List<Integer>> item) throws Exception {
-				
-				List<Integer> customerListOfPartsIds = item._2; // retrieves the list of parts for this customer
-																		
-				// sort both lists to speed up lookups
-				Collections.sort(customerListOfPartsIds);						
-				Collections.sort(queryListOfPartsIds);
-				
-				// will store the common PartID's in this List
-				List<Integer> inCommon = 
-					    new ArrayList<Integer>();
+        // Return the top 10 entries in the RDD, the key is the 
+        // similarity score.        
+        List<Tuple2<Double, Tuple2<Integer, List<Integer>>>> topKResults = 
+                jaccardSimilarityScore.top(topKValue, new TupleComparator ());
+        
+        System.out.println("Total after topK " + topKValue + " is: " +topKResults.size());
+                
+        // print the topK entries
+        for (Tuple2<Double, Tuple2<Integer, List<Integer>>>  resultItem : topKResults) {
+            System.out.println("Score is: [" + resultItem._1.toString() + 
+                               "] Customer key: ["+ resultItem._2._1 + 
+                               "] Part keys: " + resultItem._2._2);    
+        }
+                        
+        // Stop the timer
+        finalTimestamp = System.nanoTime();
 
-				// will store all PartID's (repeated counts only one) in this List
-				List<Integer> totalUniquePartsID = 
-					    new ArrayList<Integer>();	
-								
-				int indexQueryList = 0;
-				int indexCustoList = 0;
-				                
-				// iterates until the end of the shortest list is reached
-				while(indexQueryList < queryListOfPartsIds.size() && 
-					  indexCustoList < customerListOfPartsIds.size()){
-					
-					// if the value in the current entry in Query List is greater 
-					// than the one in the Customer List, this is a unique partId
-					if (queryListOfPartsIds.get(indexQueryList).intValue() > customerListOfPartsIds.get(indexCustoList).intValue()){
-						
-						totalUniquePartsID.add(customerListOfPartsIds.get(indexCustoList));
-						// move index in Customer List to the next entry
-						indexCustoList++;
-						
-					} else {
-						// if both values in the current Query List and Customer List 
-						// are equal, this is a common partId					
-						if (queryListOfPartsIds.get(indexQueryList).intValue() == customerListOfPartsIds.get(indexCustoList).intValue()){
-							
-							inCommon.add(queryListOfPartsIds.get(indexQueryList));
-							// but a common part is also unique, so put it in the 
-							// corresponding list
-							totalUniquePartsID.add(queryListOfPartsIds.get(indexQueryList));
-							
-							// move index in both Lists to the next entry
-							indexCustoList++;
-							indexQueryList++;
-							
-						} else {
-							// if the value in the current Query List is less than the 
-							// one in the Customer List, this is not a common part 
-							totalUniquePartsID.add(queryListOfPartsIds.get(indexQueryList));
-							// move index in Query List to the next entry
-							indexQueryList++;	
-							
-						}					
-					}				
-				}		
-				
-				// we will iterate from the last index in the shortest List
-				// until the end of the largest List, all entries are unique
-				// partID's
-				if (queryListOfPartsIds.size() > customerListOfPartsIds.size()){
-					
-				    for (int i=indexQueryList; i< queryListOfPartsIds.size(); i++)
-				    	totalUniquePartsID.add(queryListOfPartsIds.get(i));
-				    
-				} else{
-					
-				    for (int i=indexCustoList; i< customerListOfPartsIds.size(); i++)
-				    	totalUniquePartsID.add(customerListOfPartsIds.get(i));
-				    
-				}						
+        // Calculate elapsed times
+        // time to load data from hdfs into RDD
+        loadRDDTime = (startQueryTimestamp - startTime) / 1000000000.0;
+        // reads file from HDFS time
+        readsHDFSTime = (readFileTime - startTime) / 1000000000.0;
+        // query time including loading RDD into memory
+        countTime = (startQueryTimestamp - countTimestamp) / 1000000000.0;
+        // query time not including loading RDD into memory
+        queryTime = (finalTimestamp - startQueryTimestamp) / 1000000000.0;
+        // total elapsed time
+        elapsedTotalTime = (finalTimestamp - startTime) / 1000000000.0;
 
-				Double similarityValue = new Double(0.0);
+        // print out the final results
+        if (warmCache == 1)
+            System.out.println("Result Query 1:\nDataset Factor: " + NUMBER_OF_COPIES + "\ntopKValue: " + topKValue + "\nNum Cust: " + numberOfCustomers
+                    + "\nReads HDFS time: " + readsHDFSTime + "\nLoad RDD time: " + String.format("%.9f", loadRDDTime)
+                    + "\nTime to count: " + String.format("%.9f", countTime) + "\nQuery time: " + String.format("%.9f", queryTime) + "\nTotal time: "
+                    + String.format("%.9f", elapsedTotalTime) + "\n");
+        else
+            System.out.println("Result Query 1:\nDataset Factor: " + NUMBER_OF_COPIES + "\ntopKValue: " + topKValue + "\nNum Cust: " + numberOfCustomers
+                    + "\nReads HDFS time: " + readsHDFSTime + "\nLoad RDD time: " + String.format("%.9f", loadRDDTime)
+                    + "\nQuery time: " + String.format("%.9f", queryTime) + "\nTotal time: " + String.format("%.9f", elapsedTotalTime) + "\n");
 
-				// Prevents divided by zero errors
-				if (totalUniquePartsID.size()!=0)
-					similarityValue = new Double((double)inCommon.size() / (double)totalUniquePartsID.size());
-				
-				// adds the similarity along with part ID's from this customer
-				// that are common with the query list
-				Tuple2<Integer, List<Integer>> innerTuple = 
-						new Tuple2<Integer, List<Integer>>(item._1, inCommon);
-				// adds the Customer.key
-				Tuple2<Double, Tuple2<Integer, List<Integer>>> outerTuple = 
-						new Tuple2<Double, Tuple2<Integer, List<Integer>>>(similarityValue, innerTuple);
-				
-				List<Tuple2<Double, Tuple2<Integer, List<Integer>>>> returnTuple = 
-					    new ArrayList<Tuple2<Double, Tuple2<Integer, List<Integer>>>>();
-				
-				returnTuple.add(outerTuple);
-								
-				return returnTuple.iterator();
-				
-			}
-		});
-		
-//		System.out.println("Total after 2nd map " +jaccardSimilarityScore.count());
-		
-		// Comparator class for comparing similarity results, to be used in top and
-		// prevent serialization error by implementing Serializable
-		class TupleComparator implements Comparator<Tuple2<Double, Tuple2<Integer, List<Integer>>>>, Serializable {
+        // Finally stop the Spark context once all is completed
+        sc.stop();
 
-			private static final long serialVersionUID = 1972211969496211511L;
-
-			@Override
-		    public int compare(Tuple2<Double, Tuple2<Integer,List<Integer>>> score_1, 
-		    				   Tuple2<Double, Tuple2<Integer,List<Integer>>> score_2) {
-		        return Double.compare(score_1._1, score_2._1);
-		    }
-		}	
-
-		// Return the top 10 entries in the RDD, the key is the 
-		// similarity score.
-		
-		List<Tuple2<Double, Tuple2<Integer, List<Integer>>>> topKResults = 
-				jaccardSimilarityScore.top(topKValue, new TupleComparator ());
-		
-		System.out.println("Total after topK " + topKValue + " is: " +topKResults.size());
-				
-		// print the topK entries
-		for (Tuple2<Double, Tuple2<Integer, List<Integer>>>  resultItem : topKResults) {
-	        System.out.println("Score is: [" + resultItem._1.toString() + 
-	        		           "] Customer key: ["+ resultItem._2._1 + 
-	        				   "] Part keys: " + resultItem._2._2);	
-		}
-				
-	    
-		int finalResultCount=0;
-		
-		// Stop the timer
-		finalTimestamp = System.nanoTime();
-
-		// Calculate elapsed times
-		// time to load data from hdfs into RDD
-		loadRDDTime = (startQueryTimestamp - startTime) / 1000000000.0;
-		// reads file from HDFS time
-		readsHDFSTime = (readFileTime - startTime) / 1000000000.0;
-		// query time including loading RDD into memory
-		countTime = (startQueryTimestamp - countTimestamp) / 1000000000.0;
-		// query time not including loading RDD into memory
-		queryTime = (finalTimestamp - startQueryTimestamp) / 1000000000.0;
-		// total elapsed time
-		elapsedTotalTime = (finalTimestamp - startTime) / 1000000000.0;
-
-		// print out the final results
-		if (warmCache == 1)
-			System.out.println("Result Query 1:\nDataset Factor: " + NUMBER_OF_COPIES + "\ntopKValue: " + topKValue + "\nNum Cust: " + numberOfCustomers
-					+ "\nResult count: " + finalResultCount + "\nReads HDFS time: " + readsHDFSTime + "\nLoad RDD time: " + String.format("%.9f", loadRDDTime)
-					+ "\nTime to count: " + String.format("%.9f", countTime) + "\nQuery time: " + String.format("%.9f", queryTime) + "\nTotal time: "
-					+ String.format("%.9f", elapsedTotalTime) + "\n");
-		else
-			System.out.println("Result Query 1:\nDataset Factor: " + NUMBER_OF_COPIES + "\ntopKValue: " + topKValue + "\nNum Cust: " + numberOfCustomers
-					+ "\nResult count: " + finalResultCount + "\nReads HDFS time: " + readsHDFSTime + "\nLoad RDD time: " + String.format("%.9f", loadRDDTime)
-					+ "\nQuery time: " + String.format("%.9f", queryTime) + "\nTotal time: " + String.format("%.9f", elapsedTotalTime) + "\n");
-
-		// Finally stop the Spark context once all is completed
-		sc.stop();
-
-	}
-	
+    }
+    
 }
 
