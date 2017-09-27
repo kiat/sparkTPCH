@@ -106,7 +106,7 @@ public class MyKryoRegistrator implements KryoRegistrator, Serializable {
 		doRegistration(kryo, "org.apache.spark.sql.catalyst.expressions.UnsafeRow");
 		
 		// register new classes beyond this point, the order matters!!!		
-		doRegistration(kryo, "edu.rice.exp.spark_exp.JaccardSimilaritySimple$1TupleComparator.class");		
+		doRegistration(kryo, "edu.rice.exp.spark_exp.JaccardSimilaritySimple$1TupleComparator");		
 
 	}
 
