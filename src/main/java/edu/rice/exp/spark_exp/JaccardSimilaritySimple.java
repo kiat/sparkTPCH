@@ -8,23 +8,13 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.PairFunction;
-import org.apache.spark.api.java.function.VoidFunction;
-import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDDLike;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.api.java.function.Function2;
-import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.storage.StorageLevel;
 
 import scala.Tuple2;
@@ -32,8 +22,6 @@ import edu.rice.dmodel.Customer;
 import edu.rice.dmodel.LineItem;
 import edu.rice.dmodel.MyKryoRegistrator;
 import edu.rice.dmodel.Order;
-import edu.rice.dmodel.Part;
-import edu.rice.dmodel.Wrapper;
 
 /**
  * This is a class for computing a Top-K Similarity Query using
@@ -69,7 +57,7 @@ import edu.rice.dmodel.Wrapper;
  *
  */
 
-public class JaccardSimilarityQuery implements Serializable {
+public class JaccardSimilaritySimple implements Serializable {
     
     private static final long serialVersionUID = 3045541819871271488L;    
 
@@ -155,7 +143,7 @@ public class JaccardSimilarityQuery implements Serializable {
             warmCache = Integer.parseInt(args[4]);
 
         SparkConf conf = new SparkConf();
-        conf.setAppName("JaccardSimilarity-" + NUMBER_OF_COPIES);
+        conf.setAppName("JaccardScoreSimple-" + NUMBER_OF_COPIES);
                 
         // Kryo Serialization
         conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
@@ -214,20 +202,19 @@ public class JaccardSimilarityQuery implements Serializable {
         // Start the timer
         startQueryTimestamp = System.nanoTime();
         
-        // map to pair <Customer.key, List<PartID>>
-        // returns pairs with the customerKey and a list with all partsId for each
-        // customer
-        JavaPairRDD<Integer, List<Integer>> allPartsIDsPerCustomer = 
-            customerRDD.mapToPair(new PairFunction<Customer,  // Type of Input Object: A Customer
-                                  Integer,                    // Key: Customer
-                                  List<Integer>>() {          // Value: A List of all parts Id's
-                                                              // from all orders for each customer
+        // map that generates pairs of <Similarity.score, Tuple2<Customer.key, List<PartID>>>
+        JavaPairRDD<Double, Tuple2<Integer, List<Integer>>> jaccardSimilarityScore = 
+            customerRDD.mapToPair(new PairFunction<Customer,  			// Type of Input Object: A Customer
+                                  Double,                    			// Returning Key: Customer
+                                  Tuple2<Integer, List<Integer>>>() {   // Returning Value: A List of all parts Id's
+            															// from all orders for each customer
     
                 private static final long serialVersionUID = 1932241819871271488L;
     
                 @Override
-                public Tuple2<Integer, List<Integer>> call(Customer customer) throws Exception {
+                public Tuple2<Double, Tuple2<Integer, List<Integer>>> call(Customer customer) throws Exception {
                     List<Order> orders = customer.getOrders();
+                    Integer customerKey = customer.getCustkey();
 
                     // List for storing all partID's for this Customer
                     List<Integer> listOfPartsIds = 
@@ -251,112 +238,86 @@ public class JaccardSimilarityQuery implements Serializable {
                     // sorts partId's
                     Collections.sort(listOfPartsIds);
                                         
-                    return new Tuple2<Integer, List<Integer>>(new Integer(customer.getCustkey()), listOfPartsIds);
-                }
-            });
-                
-        // Now, let's compute Jaccard Similarity returning 
-        // a tuple <Similarity.score, <customer.key, <list of PartID's>>
-        // for each customer
-        JavaPairRDD<Double, Tuple2<Integer, List<Integer>>> jaccardSimilarityScore = 
-                allPartsIDsPerCustomer.flatMapToPair(new PairFlatMapFunction<Tuple2<Integer, List<Integer>>,    // Type of input RDD
-                                                    Double,                                                     // Key: Similarity value
-                                                    Tuple2<Integer, List<Integer>>>() {                         // Value: Customer.key and List<PartsId>
-        
-            private static final long serialVersionUID = 2009241861741271488L;
+                    // will store the common PartID's in this List
+                    List<Integer> inCommon = 
+                            new ArrayList<Integer>();
 
-            @Override
-            public Iterator<Tuple2<Double, Tuple2<Integer, List<Integer>>>> call(Tuple2<Integer, List<Integer>> item) throws Exception {
-
-            	// retrieves the list of parts for this customer
-                List<Integer> customerListOfPartsIds = item._2;
-                                                                                        
-                // will store the common PartID's in this List
-                List<Integer> inCommon = 
-                        new ArrayList<Integer>();
-
-                // will store all PartID's (repeated counts only one) in this List
-                List<Integer> totalUniquePartsID = 
-                        new ArrayList<Integer>();    
-                                
-                int indexQueryList = 0;
-                int indexCustoList = 0;
-                                
-                // iterates until the end of the shortest list is reached
-                while(indexQueryList < queryListOfPartsIds.size() && 
-                      indexCustoList < customerListOfPartsIds.size()){
-                    
-                    // if the value in the current entry in Query List is greater 
-                    // than the one in the Customer List, this is a unique partId
-                    if (queryListOfPartsIds.get(indexQueryList).intValue() > customerListOfPartsIds.get(indexCustoList).intValue()){
+                    // will store all PartID's (repeated counts only one) in this List
+                    List<Integer> totalUniquePartsID = 
+                            new ArrayList<Integer>();    
+                                    
+                    int indexQueryList = 0;
+                    int indexCustoList = 0;
+                                    
+                    // iterates until the end of the shortest list is reached
+                    while(indexQueryList < queryListOfPartsIds.size() && 
+                          indexCustoList < listOfPartsIds.size()){
                         
-                        totalUniquePartsID.add(customerListOfPartsIds.get(indexCustoList));
-                        // move index in Customer List to the next entry
-                        indexCustoList++;
-                        
-                    } else {
-                        // if both values in the current Query List and Customer List 
-                        // are equal, this is a common partId                    
-                        if (queryListOfPartsIds.get(indexQueryList).intValue() == customerListOfPartsIds.get(indexCustoList).intValue()){
+                        // if the value in the current entry in Query List is greater 
+                        // than the one in the Customer List, this is a unique partId
+                        if (queryListOfPartsIds.get(indexQueryList).intValue() > listOfPartsIds.get(indexCustoList).intValue()){
                             
-                            inCommon.add(queryListOfPartsIds.get(indexQueryList));
-                            // but a common part is also unique, so put it in the 
-                            // corresponding list
-                            totalUniquePartsID.add(queryListOfPartsIds.get(indexQueryList));
-                            
-                            // move index in both Lists to the next entry
+                            totalUniquePartsID.add(listOfPartsIds.get(indexCustoList));
+                            // move index in Customer List to the next entry
                             indexCustoList++;
-                            indexQueryList++;
                             
                         } else {
-                            // if the value in the current Query List is less than the 
-                            // one in the Customer List, this is not a common part 
-                            totalUniquePartsID.add(queryListOfPartsIds.get(indexQueryList));
-                            // move index in Query List to the next entry
-                            indexQueryList++;    
-                            
-                        }                    
-                    }                
-                }        
-                
-                // we will iterate from the last index in the shortest List
-                // until the end of the largest List, all entries are unique
-                // partID's
-                if (queryListOfPartsIds.size() > customerListOfPartsIds.size()){
-                    
-                    for (int i=indexQueryList; i< queryListOfPartsIds.size(); i++)
-                        totalUniquePartsID.add(queryListOfPartsIds.get(i));
-                    
-                } else{
-                    
-                    for (int i=indexCustoList; i< customerListOfPartsIds.size(); i++)
-                        totalUniquePartsID.add(customerListOfPartsIds.get(i));
-                    
-                }                        
-
-                Double similarityValue = new Double(0.0);
-
-                // Prevents divided by zero errors
-                if (totalUniquePartsID.size()!=0)
-                    similarityValue = new Double((double)inCommon.size() / (double)totalUniquePartsID.size());
-                
-                // adds the similarity along with part ID's from this customer
-                // that are common with the query list
-                Tuple2<Integer, List<Integer>> innerTuple = 
-                        new Tuple2<Integer, List<Integer>>(item._1, inCommon);
-                // adds the Customer.key
-                Tuple2<Double, Tuple2<Integer, List<Integer>>> outerTuple = 
-                        new Tuple2<Double, Tuple2<Integer, List<Integer>>>(similarityValue, innerTuple);
-                
-                List<Tuple2<Double, Tuple2<Integer, List<Integer>>>> returnTuple = 
-                        new ArrayList<Tuple2<Double, Tuple2<Integer, List<Integer>>>>();
-                
-                returnTuple.add(outerTuple);
+                            // if both values in the current Query List and Customer List 
+                            // are equal, this is a common partId                    
+                            if (queryListOfPartsIds.get(indexQueryList).intValue() == listOfPartsIds.get(indexCustoList).intValue()){
                                 
-                return returnTuple.iterator();
-                
-            }
-        });
+                                inCommon.add(queryListOfPartsIds.get(indexQueryList));
+                                // but a common part is also unique, so put it in the 
+                                // corresponding list
+                                totalUniquePartsID.add(queryListOfPartsIds.get(indexQueryList));
+                                
+                                // move index in both Lists to the next entry
+                                indexCustoList++;
+                                indexQueryList++;
+                                
+                            } else {
+                                // if the value in the current Query List is less than the 
+                                // one in the Customer List, this is not a common part 
+                                totalUniquePartsID.add(queryListOfPartsIds.get(indexQueryList));
+                                // move index in Query List to the next entry
+                                indexQueryList++;    
+                                
+                            }                    
+                        }                
+                    }        
+                    
+                    // we will iterate from the last index in the shortest List
+                    // until the end of the largest List, all entries are unique
+                    // partID's
+                    if (queryListOfPartsIds.size() > listOfPartsIds.size()){
+                        
+                        for (int i=indexQueryList; i< queryListOfPartsIds.size(); i++)
+                            totalUniquePartsID.add(queryListOfPartsIds.get(i));
+                        
+                    } else{
+                        
+                        for (int i=indexCustoList; i< listOfPartsIds.size(); i++)
+                            totalUniquePartsID.add(listOfPartsIds.get(i));
+                        
+                    }                        
+
+                    Double similarityValue = new Double(0.0);
+
+                    // Prevents divided by zero errors
+                    if (totalUniquePartsID.size()!=0)
+                        similarityValue = new Double((double)inCommon.size() / (double)totalUniquePartsID.size());
+
+                    // adds the Customer.key along with part ID's from this customer
+                    // that are common with the query list
+                    Tuple2<Integer, List<Integer>> innerTuple = 
+                            new Tuple2<Integer, List<Integer>>(customerKey, inCommon);
+                    // adds the similarity score
+                    Tuple2<Double, Tuple2<Integer, List<Integer>>> outerTuple = 
+                            new Tuple2<Double, Tuple2<Integer, List<Integer>>>(similarityValue, innerTuple);
+                                                            
+                    return outerTuple;
+                }
+            });                
                 
         // Comparator class for comparing similarity results, to be used in top() and
         // prevents kryo serialization error by implementing Serializable
@@ -417,4 +378,5 @@ public class JaccardSimilarityQuery implements Serializable {
     }
     
 }
+
 
