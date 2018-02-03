@@ -21,10 +21,10 @@ public class GenerateDataFileOnHDFS_RDD {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
-		String hdfsNameNodePath = "hdfs://10.134.96.100:9000/user/kia/customer-";
+		String hdfsNameNodePath = "hdfs://ip-172-30-4-47:9000/customer-";
 
 		// define the number of partitions
-		int numPartitions = 8;
+		int numPartitions = 128;
 
 		int NUMBER_OF_COPIES = 1;// number of Customers multiply X
 									// 2^REPLICATION_FACTOR
@@ -65,14 +65,18 @@ public class GenerateDataFileOnHDFS_RDD {
 		if (args.length > 2)
 			numPartitions = Integer.parseInt(args[2]);
 
-		if (args.length > 3)
-			hdfsNameNodePath = args[3];
+                String hdfsInputPath = "";
+                if (args.length > 3)
+                        hdfsInputPath = args[3];
 
 		if (args.length > 4)
-			serializeData = Integer.parseInt(args[4]);
+			hdfsNameNodePath = args[4];
 
 		if (args.length > 5)
-			compressData = Integer.parseInt(args[5]);
+			serializeData = Integer.parseInt(args[5]);
+
+		if (args.length > 6)
+			compressData = Integer.parseInt(args[6]);
 		
 		SparkConf conf = new SparkConf();
 
@@ -96,33 +100,55 @@ public class GenerateDataFileOnHDFS_RDD {
 		conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
 		// set the block size to 256 MB
 		conf.set("fs.local.block.size", "268435456");
-
+                conf.set("spark.rpc.message.maxSize", "512");
 		JavaSparkContext sc = new JavaSparkContext(conf);
-		JavaRDD<Customer> customerRDD_raw = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);
-
-		JavaRDD<Customer> customerRDD = customerRDD_raw;
-		
-		if (NUMBER_OF_COPIES==1){
+                if (hdfsInputPath == "") {
+		    JavaRDD<Customer> customerRDD_raw = sc.parallelize(DataGenerator.generateData(fileScale), numPartitions);
+		    JavaRDD<Customer> customerRDD = customerRDD_raw;
+                    customerRDD_raw.cache();
+		    if (NUMBER_OF_COPIES==1){
 			System.out.println("Saving the dataset for 1");
 			// coalesce the RDD based on number of partitions.				
-			customerRDD = customerRDD.coalesce(numPartitions);	
 			customerRDD.saveAsObjectFile(hdfsNameNodePath + (1));			
-		} else {
+		    } else {
 
 			// Copy the same data multiple times to make it big data
 			for (int i = 1; i < NUMBER_OF_COPIES; i++) {
 				customerRDD = customerRDD.union(customerRDD_raw);
-	
 				System.out.println("Appending set-> " + i);
-				
 				if (numberOfCopies_set.contains((i+1))) {
 					System.out.println("Saving the dataset for " + i);
 					// coalesce the RDD based on number of partitions.				
-					customerRDD = customerRDD.coalesce(numPartitions);	
+                                        customerRDD = customerRDD.coalesce(numPartitions);
 					customerRDD.saveAsObjectFile(hdfsNameNodePath + (i+1));
 				}
 			}
-		}
+		   }
+                } else {
+                    JavaRDD<Customer> customerRDD_raw = sc.objectFile(hdfsInputPath, numPartitions);
+                    customerRDD_raw.cache();
+                    JavaRDD<Customer> customerRDD = customerRDD_raw;
+                    if (NUMBER_OF_COPIES==1){
+                        System.out.println("Saving the dataset for 1");
+                        // coalesce the RDD based on number of partitions.                              
+                        customerRDD.saveAsObjectFile(hdfsNameNodePath + (1));
+                    } else {
+
+                        // Copy the same data multiple times to make it big data
+                        for (int i = 1; i < NUMBER_OF_COPIES; i++) {
+                                customerRDD = customerRDD.union(customerRDD_raw);
+                                System.out.println("Appending set-> " + i);
+                                if (numberOfCopies_set.contains((i+1))) {
+                                        System.out.println("Saving the dataset for " + i);
+                                        // coalesce the RDD based on number of partitions.                              
+                                        customerRDD = customerRDD.coalesce(numPartitions);
+                                        customerRDD.saveAsObjectFile(hdfsNameNodePath + (i+1));
+                                }
+                        }
+                   }
+
+
+                }
 
 	}
 }

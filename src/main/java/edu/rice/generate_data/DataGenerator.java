@@ -74,11 +74,11 @@ public class DataGenerator {
 
 //		filename = "0.1";
 		// NOTE: Hard coded data path. 
-		String PartFile = "/mnt/data/tables_scale_" + filename + "/part.tbl";
-		String SupplierFile = "/mnt/data/tables_scale_" + filename + "/supplier.tbl";
-		String OrderFile = "/mnt/data/tables_scale_" + filename + "/orders.tbl";
-		String LineitemFile = "/mnt/data/tables_scale_" + filename + "/lineitem.tbl";
-		String CustomerFile = "/mnt/data/tables_scale_" + filename + "/customer.tbl";
+		String PartFile = "/home/ubuntu/ObjectQueryModel/tables_scale_" + filename + "/part.tbl";
+		String SupplierFile = "/home/ubuntu/ObjectQueryModel/tables_scale_" + filename + "/supplier.tbl";
+		String OrderFile = "/home/ubuntu/ObjectQueryModel/tables_scale_" + filename + "/orders.tbl";
+		String LineitemFile = "/home/ubuntu/ObjectQueryModel/tables_scale_" + filename + "/lineitem.tbl";
+		String CustomerFile = "/home/ubuntu/ObjectQueryModel/tables_scale_" + filename + "/customer.tbl";
 
 		HashMap<Integer, Part> partMap = new HashMap<Integer, Part>(6000000);
 		HashMap<Integer, Supplier> supplierMap = new HashMap<Integer, Supplier>(100000);

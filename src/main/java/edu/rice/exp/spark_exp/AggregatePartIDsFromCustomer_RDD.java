@@ -30,7 +30,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
 		// can be overwritten by the fourth command line arg
-		String hdfsNameNodePath = "hdfs://10.134.96.100:9000/user/kia/customer-";
+		String hdfsNameNodePath = "hdfs://ip-172-30-4-47:9000/customer-";
 
 		long startTime = 0; // timestamp from the beginning
 		long readFileTime = 0; // timestamp after reading from HDFS
@@ -47,7 +47,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 		// define the number of partitions
 		// can be overwritten by the 3rd command line arg
-		int numPartitions = 8;
+		int numPartitions = 128;
 
 		int NUMBER_OF_COPIES = 0;// number of Customers multiply X 2^REPLICATION_FACTOR
 
@@ -94,6 +94,7 @@ public class AggregatePartIDsFromCustomer_RDD {
 
 		conf.set("spark.io.compression.codec", "lzf"); // snappy, lzf, lz4
 		// conf.set("spark.speculation", "true");
+                conf.set("spark.rpc.message.maxSize", "512");
 
 		conf.set("spark.shuffle.spill", "true");
 
